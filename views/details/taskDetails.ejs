@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Details | Pythagora Lab</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/public/styles/styles.css">
+</head>
+<body>
+    <div class="">
+        <h2>Task Details</h2>
+        <% if(details && details.length > 0) { %>
+            <% details.forEach(function(detail) { %>
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <% Object.keys(detail).forEach(function(key) { %>
+                            <strong><%= key %>:</strong> <%= JSON.stringify(detail[key]) %><br>
+                        <% }); %>
+                    </div>
+                </div>
+            <% }); %>
+        <% } else { %>
+            <p>No task details available.</p>
+        <% } %>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+</body>
+</html>

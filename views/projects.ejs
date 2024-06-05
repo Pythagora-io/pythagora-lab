@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Projects List | Pythagora Lab</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/public/styles/styles.css">
+    <style>
+        thead th {
+            position: sticky;
+            top: 0;
+            background: white;
+            z-index: 100;
+        }
+        .project-states-container {
+            height: calc(100vh - 150px); /* Adjust based on actual header and form heights */
+            overflow-y: scroll;
+        }
+        /* Full width for the details section */
+        .details-container {
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-6">
+                <h3>Projects</h3>
+                <form method="GET" action="/projects">
+                    <select class="custom-select" name="projectId" id="projectSelect" onchange="this.form.submit()">
+                        <option selected>Select a project</option>
+                        <% projects.forEach(project => { %>
+                            <option value="<%= project.id %>" <%= selectedProjectId === project.id ? 'selected' : '' %>><%= project.name %></option>
+                        <% }); %>
+                    </select>
+                </form>
+            </div>
+            <% if (branches && branches.length > 0) { %>
+                <div class="col-md-6">
+                    <h3>Branches</h3>
+                    <form method="GET" action="/projects">
+                        <input type="hidden" name="projectId" value="<%= selectedProjectId %>">
+                        <select class="custom-select" name="branchId" id="branchSelect" onchange="this.form.submit()">
+                            <option selected>Select a branch</option>
+                            <% branches.forEach(branch => { %>
+                                <option value="<%= branch.id %>" <%= selectedBranchId === branch.id ? 'selected' : '' %>><%= branch.name %></option>
+                            <% }); %>
+                        </select>
+                    </form>
+                </div>
+            <% } %>
+        </div>
+        <% if (projectStates && projectStates.length > 0) { %>
+            <h3>Project States</h3>
+            <div class="project-states-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Epic</th>
+                            <th>Task</th>
+                            <th>Step</th>
+                            <th>LLM requests messages</th>
+                            <th>Prompt name</th>
+                            <th>Prompt data</th>
+                            <th>LLM responses</th>
+                            <th>List of files</th>
+                            <th>User inputs</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% projectStates.forEach(state => { %>
+                            <tr>
+                                <td><%= state.step_index %></td>
+                                <td><a href="javascript:void(0)" class="detail-link" data-detail-type="epic" data-project-state-id="<%= state.id %>">
+                                    <% let epics = JSON.parse(state.epics); %>
+                                    <%= epics.length %>
+                                </a></td>
+                                <td><a href="javascript:void(0)" class="detail-link" data-detail-type="task" data-project-state-id="<%= state.id %>">
+                                    <%
+                                        let tasks = JSON.parse(state.tasks);
+                                        let completed_tasks = tasks.filter(t => t.status === 'done');
+                                    %>
+                                    <%= Math.min(completed_tasks.length + 1, tasks.length) %> / <%= tasks.length %>
+                                </a></td>
+                                <td><a href="javascript:void(0)" class="detail-link" data-detail-type="step" data-project-state-id="<%= state.id %>">
+                                    <%
+                                        let steps = JSON.parse(state.steps);
+                                        let completed_steps = steps.filter(t => t.completed);
+                                    %>
+                                    <%= Math.min(completed_steps.length + 1, steps.length) %> / <%= steps.length %>
+                                </a></td>
+                                <td><a href="javascript:void(0)" class="detail-link" data-detail-type="llmRequests" data-project-state-id="<%= state.id %>">View LLM Requests</a></td>
+                                <td><a href="javascript:void(0)" class="detail-link" data-detail-type="promptName" data-project-state-id="<%= state.id %>">View Prompt Name</a></td>
+                                <td><a href="javascript:void(0)" class="detail-link" data-detail-type="promptData" data-project-state-id="<%= state.id %>">View Prompt Data</a></td>
+                                <td><a href="javascript:void(0)" class="detail-link" data-detail-type="llmResponses" data-project-state-id="<%= state.id %>">View LLM Responses</a></td>
+                                <td><a href="javascript:void(0)" class="detail-link" data-detail-type="files" data-project-state-id="<%= state.id %>">View Files</a></td>
+                                <td><a href="javascript:void(0)" class="detail-link" data-detail-type="userInputs" data-project-state-id="<%= state.id %>">View User Inputs</a></td>
+                            </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            </div>
+        <% } %>
+    </div>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script src="/public/js/detailsToggle.js"></script>
+    <script>
+        function fetchDetails(type, id) {
+            console.log(`Fetching details for ${type} with ID ${id}`);
+            jQuery.ajax({
+                url: `/details/${type}/${id}`,
+                type: 'GET',
+                success: function(data) {
+                    // Assuming the server responds with an HTML snippet to be displayed
+                    const detailRow = `<tr><td colspan="10">${data}</td></tr>`;
+                    jQuery(`a[data-detail-type="${type}"][data-project-state-id="${id}"]`).closest('tr').after(detailRow);
+                },
+                error: function(error) {
+                    console.error('Error fetching details:', error);
+                    alert('Error fetching details. Please try again.');
+                }
+            });
+        }
+        document.addEventListener("DOMContentLoaded", function() {
+        const projectSelect = document.getElementById('projectSelect');
+        const branchSelect = document.getElementById('branchSelect');
+
+        // Check if the form was already submitted
+        if (!sessionStorage.getItem('formSubmitted')) {
+            // Automatically submit the form if a project is already selected
+            if (projectSelect && projectSelect.value !== "Select a project") {
+                sessionStorage.setItem('formSubmitted', 'true');
+                projectSelect.form.submit();
+            }
+
+            // Automatically submit the form if a branch is already selected
+            if (branchSelect && branchSelect.value !== "Select a branch") {
+                sessionStorage.setItem('formSubmitted', 'true');
+                branchSelect.form.submit();
+            }
+        } else {
+            // Clear the flag after the form is submitted and reloaded
+            sessionStorage.removeItem('formSubmitted');
+        }
+    });
+    </script>
+</body>
+</html>
