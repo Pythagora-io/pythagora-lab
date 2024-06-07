@@ -15,8 +15,14 @@
                 <div class="card mb-3">
                     <div class="card-body">
                         <% Object.keys(detail).forEach(function(key) { %>
-                            <strong><%= key %>:</strong> <%= detail[key] %><br>
+                            <% if(key !== 'content') { %>
+                                <strong><%= key %>:</strong> <%= detail[key] %><br>
+                            <% } %>
                         <% }); %>
+                        <% if(detail.content) { %>
+                            <strong>Content:</strong>
+                            <pre><%= detail.content %></pre>
+                        <% } %>
                     </div>
                 </div>
             <% }); %>

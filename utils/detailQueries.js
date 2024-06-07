@@ -150,10 +150,10 @@ function getStepDetailsByProjectStateId(dbPath, projectStateId) {
 }
 
 /**
- * Fetches detailed data for the 'files' column in a project state.
+ * Fetches detailed data for the 'files' column in a project state, including file content.
  * @param {string} dbPath Path to the SQLite database file.
  * @param {string} projectStateId The ID of the project state for which file details are retrieved.
- * @returns {Promise<Array>} A promise that resolves with the file details for the given project state ID.
+ * @returns {Promise<Array>} A promise that resolves with the file details for the given project state ID, including file content.
  */
 function getFileDetailsByProjectStateId(dbPath, projectStateId) {
     return new Promise((resolve, reject) => {
@@ -162,13 +162,17 @@ function getFileDetailsByProjectStateId(dbPath, projectStateId) {
                 console.error('Error opening database for file details:', err.message);
                 reject(err);
             } else {
-                const query = 'SELECT * FROM files WHERE project_state_id = ?';
+                const query = `
+                SELECT f.*, fc.content
+                FROM files f
+                LEFT JOIN file_contents fc ON f.content_id = fc.id
+                WHERE f.project_state_id = ?`;
                 db.all(query, [projectStateId], (err, rows) => {
                     if (err) {
                         console.error('Error fetching file details:', err.message);
                         reject(err);
                     } else {
-                        console.log(`Fetched file details successfully for project state ID ${projectStateId}.`);
+                        console.log(`Fetched file details successfully for project state ID ${projectStateId}, including file content.`);
                         resolve(rows);
                     }
                     db.close();
