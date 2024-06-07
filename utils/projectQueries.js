@@ -85,6 +85,8 @@ function getProjectStatesByBranchId(dbPath, branchId) {
             const query = `
                 SELECT ps.*,
                        (SELECT COUNT(*) FROM llm_requests WHERE project_state_id = ps.id) AS llm_request_count,
+                       (SELECT COUNT(*) FROM user_inputs WHERE project_state_id = ps.id) AS user_inputs_count,
+                       (SELECT COUNT(*) FROM files WHERE project_state_id = ps.id) AS files_count,
                        (SELECT GROUP_CONCAT(prompts, '${divider}') FROM llm_requests WHERE project_state_id = ps.id) AS aggregated_prompts,
                        (SELECT GROUP_CONCAT(agent, '${divider}') FROM llm_requests WHERE project_state_id = ps.id) AS agents
                 FROM project_states ps

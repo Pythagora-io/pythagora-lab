@@ -149,9 +149,69 @@ function getStepDetailsByProjectStateId(dbPath, projectStateId) {
     });
 }
 
+/**
+ * Fetches detailed data for the 'files' column in a project state.
+ * @param {string} dbPath Path to the SQLite database file.
+ * @param {string} projectStateId The ID of the project state for which file details are retrieved.
+ * @returns {Promise<Array>} A promise that resolves with the file details for the given project state ID.
+ */
+function getFileDetailsByProjectStateId(dbPath, projectStateId) {
+    return new Promise((resolve, reject) => {
+        const db = new sqlite3.Database(dbPath, sqlite3.OPEN_READONLY, (err) => {
+            if (err) {
+                console.error('Error opening database for file details:', err.message);
+                reject(err);
+            } else {
+                const query = 'SELECT * FROM files WHERE project_state_id = ?';
+                db.all(query, [projectStateId], (err, rows) => {
+                    if (err) {
+                        console.error('Error fetching file details:', err.message);
+                        reject(err);
+                    } else {
+                        console.log(`Fetched file details successfully for project state ID ${projectStateId}.`);
+                        resolve(rows);
+                    }
+                    db.close();
+                });
+            }
+        });
+    });
+}
+
+/**
+ * Fetches detailed data for the 'user inputs' column in a project state.
+ * @param {string} dbPath Path to the SQLite database file.
+ * @param {string} projectStateId The ID of the project state for which user input details are retrieved.
+ * @returns {Promise<Array>} A promise that resolves with the user input details for the given project state ID.
+ */
+function getUserInputDetailsByProjectStateId(dbPath, projectStateId) {
+    return new Promise((resolve, reject) => {
+        const db = new sqlite3.Database(dbPath, sqlite3.OPEN_READONLY, (err) => {
+            if (err) {
+                console.error('Error opening database for user input details:', err.message);
+                reject(err);
+            } else {
+                const query = 'SELECT * FROM user_inputs WHERE project_state_id = ?';
+                db.all(query, [projectStateId], (err, rows) => {
+                    if (err) {
+                        console.error('Error fetching user input details:', err.message);
+                        reject(err);
+                    } else {
+                        console.log(`Fetched user input details successfully for project state ID ${projectStateId}.`);
+                        resolve(rows);
+                    }
+                    db.close();
+                });
+            }
+        });
+    });
+}
+
 module.exports = {
     getLLMRequestDetailsByProjectStateId,
     getEpicDetailsByProjectStateId,
     getTaskDetailsByProjectStateId,
     getStepDetailsByProjectStateId,
+    getFileDetailsByProjectStateId,
+    getUserInputDetailsByProjectStateId,
 };
