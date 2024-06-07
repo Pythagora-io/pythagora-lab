@@ -92,7 +92,7 @@
                                     %>
                                     <%= Math.min(completed_steps.length + 1, steps.length) %> / <%= steps.length %>
                                 </a></td>
-                                <td><a href="javascript:void(0)" class="detail-link" data-detail-type="llmRequests" data-project-state-id="<%= state.id %>">View LLM Requests</a></td>
+                                <td><a href="javascript:void(0)" class="detail-link" data-detail-type="llmRequests" data-project-state-id="<%= state.id %>"><%= state.llm_request_count %></a></td>
                                 <td><a href="javascript:void(0)" class="detail-link" data-detail-type="promptName" data-project-state-id="<%= state.id %>">View Prompt Name</a></td>
                                 <td><a href="javascript:void(0)" class="detail-link" data-detail-type="promptData" data-project-state-id="<%= state.id %>">View Prompt Data</a></td>
                                 <td><a href="javascript:void(0)" class="detail-link" data-detail-type="llmResponses" data-project-state-id="<%= state.id %>">View LLM Responses</a></td>

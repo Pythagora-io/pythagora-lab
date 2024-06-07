@@ -73,27 +73,32 @@ function getBranchesByProjectId(dbPath, projectId) {
 }
 
 /**
- * Queries the 'project_states' table to find all project states for a given branch ID.
+ * Queries the 'project_states' table to find all project states for a given branch ID, including the count of LLM requests for each project state.
  * @param {string} dbPath Path to the SQLite database file.
  * @param {string} branchId The ID of the branch for which project states are retrieved.
- * @returns {Promise<Array>} A promise that resolves with the list of project states for the given branch ID.
+ * @returns {Promise<Array>} A promise that resolves with the list of project states for the given branch ID, including the count of LLM requests.
  */
 function getProjectStatesByBranchId(dbPath, branchId) {
     return new Promise((resolve, reject) => {
         loadDatabase(dbPath).then(db => {
-            const query = 'SELECT * FROM project_states WHERE branch_id = ?';
+            const query = `
+                SELECT ps.*, 
+                       (SELECT COUNT(*) FROM llm_requests WHERE project_state_id = ps.id) AS llm_request_count
+                FROM project_states ps
+                WHERE ps.branch_id = ?
+            `;
             db.all(query, [branchId], (err, rows) => {
                 if (err) {
-                    console.error('Error fetching project states:', err.message);
+                    console.error('Error fetching project states and LLM request counts:', err.message);
                     reject(err);
                 } else {
-                    console.log(`Fetched ${rows.length} project states successfully for branch ID ${branchId}.`);
+                    console.log(`Fetched ${rows.length} project states successfully for branch ID ${branchId}, including LLM request counts.`);
                     resolve(rows);
                 }
                 db.close();
             });
         }).catch(error => {
-            console.error('Failed to load database for fetching project states:', error.message);
+            console.error('Failed to load database for fetching project states and LLM request counts:', error.message);
             reject(error);
         });
     });
