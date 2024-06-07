@@ -73,32 +73,50 @@ function getBranchesByProjectId(dbPath, projectId) {
 }
 
 /**
- * Queries the 'project_states' table to find all project states for a given branch ID, including the count of LLM requests for each project state.
+ * Queries the 'project_states' table to find all project states for a given branch ID, including the count of LLM requests for each project state and aggregated prompts from all related LLM requests.
  * @param {string} dbPath Path to the SQLite database file.
  * @param {string} branchId The ID of the branch for which project states are retrieved.
- * @returns {Promise<Array>} A promise that resolves with the list of project states for the given branch ID, including the count of LLM requests.
+ * @returns {Promise<Array>} A promise that resolves with the list of project states for the given branch ID, including the count of LLM requests and aggregated prompts.
  */
 function getProjectStatesByBranchId(dbPath, branchId) {
     return new Promise((resolve, reject) => {
+        let divider = '-----'
         loadDatabase(dbPath).then(db => {
             const query = `
-                SELECT ps.*, 
-                       (SELECT COUNT(*) FROM llm_requests WHERE project_state_id = ps.id) AS llm_request_count
+                SELECT ps.*,
+                       (SELECT COUNT(*) FROM llm_requests WHERE project_state_id = ps.id) AS llm_request_count,
+                       (SELECT GROUP_CONCAT(prompts, '${divider}') FROM llm_requests WHERE project_state_id = ps.id) AS aggregated_prompts,
+                       (SELECT GROUP_CONCAT(agent, '${divider}') FROM llm_requests WHERE project_state_id = ps.id) AS agents
                 FROM project_states ps
                 WHERE ps.branch_id = ?
             `;
             db.all(query, [branchId], (err, rows) => {
                 if (err) {
-                    console.error('Error fetching project states and LLM request counts:', err.message);
+                    console.error('Error fetching project states, LLM request counts, and aggregated prompts:', err.message);
                     reject(err);
                 } else {
-                    console.log(`Fetched ${rows.length} project states successfully for branch ID ${branchId}, including LLM request counts.`);
-                    resolve(rows);
+                    let updatedRows = rows.map(row => {
+                        let new_prompts = [];
+                        (row.aggregated_prompts || '').split(divider).forEach(element => {
+                            if (element) {
+                                JSON.parse(element).forEach(e => {
+                                    new_prompts.push(JSON.stringify(e));
+                                });
+                            }
+                        });
+                        return {
+                            ...row,
+                            aggregated_prompts: new_prompts,
+                            agents: row.agents ? row.agents.split(divider) : ''
+                        };
+                    });
+
+                    resolve(updatedRows);
                 }
                 db.close();
             });
         }).catch(error => {
-            console.error('Failed to load database for fetching project states and LLM request counts:', error.message);
+            console.error('Failed to load database for fetching project states, LLM request counts, and aggregated prompts:', error.message);
             reject(error);
         });
     });

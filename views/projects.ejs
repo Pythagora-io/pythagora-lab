@@ -62,10 +62,9 @@
                             <th>Epic</th>
                             <th>Task</th>
                             <th>Step</th>
-                            <th>LLM requests messages</th>
-                            <th>Prompt name</th>
-                            <th>Prompt data</th>
-                            <th>LLM responses</th>
+                            <th>LLM requests</th>
+                            <th>Prompts</th>
+                            <th>Agent</th>
                             <th>List of files</th>
                             <th>User inputs</th>
                         </tr>
@@ -92,10 +91,19 @@
                                     %>
                                     <%= Math.min(completed_steps.length + 1, steps.length) %> / <%= steps.length %>
                                 </a></td>
-                                <td><a href="javascript:void(0)" class="detail-link" data-detail-type="llmRequests" data-project-state-id="<%= state.id %>"><%= state.llm_request_count %></a></td>
-                                <td><a href="javascript:void(0)" class="detail-link" data-detail-type="promptName" data-project-state-id="<%= state.id %>">View Prompt Name</a></td>
-                                <td><a href="javascript:void(0)" class="detail-link" data-detail-type="promptData" data-project-state-id="<%= state.id %>">View Prompt Data</a></td>
-                                <td><a href="javascript:void(0)" class="detail-link" data-detail-type="llmResponses" data-project-state-id="<%= state.id %>">View LLM Responses</a></td>
+                                <td><a href="javascript:void(0)" class="detail-link" data-detail-type="llmRequests" data-project-state-id="<%= state.id %>">
+                                    <%= state.llm_request_count %>
+                                </a></td>
+                                <td>
+                                    <% state.aggregated_prompts.forEach((p) => { %>
+                                        <div><%= JSON.parse(p).template %></div>
+                                    <% }); %>
+                                </td>
+                                <td>
+                                    <% if (state.agents) state.agents.forEach((p) => { %>
+                                        <div><%= p %></div>
+                                    <% }); %>
+                                </td>
                                 <td><a href="javascript:void(0)" class="detail-link" data-detail-type="files" data-project-state-id="<%= state.id %>">View Files</a></td>
                                 <td><a href="javascript:void(0)" class="detail-link" data-detail-type="userInputs" data-project-state-id="<%= state.id %>">View User Inputs</a></td>
                             </tr>
