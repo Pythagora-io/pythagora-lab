@@ -3,7 +3,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const sqlite3 = require('sqlite3').verbose();
-const { getProjects, getBranchesByProjectId, getProjectStatesByBranchId } = require('../utils/projectQueries');
+const { getProjects, getBranchesByProjectId, getProjectStatesByBranchId, searchProjectStates } = require('../utils/projectQueries');
 const { getLLMRequestDetailsByProjectStateId, getEpicDetailsByProjectStateId, getTaskDetailsByProjectStateId, getStepDetailsByProjectStateId, getFileDetailsByProjectStateId, getUserInputDetailsByProjectStateId } = require('../utils/detailQueries');
 const router = express.Router();
 
@@ -135,9 +135,9 @@ router.get('/projects', async (req, res) => {
     let branches = [];
     let projectStates = [];
     let selectedProjectId = req.query.projectId;
-    let selectedBranchId = req.query.branchId; // Retrieve branchId from query parameters
+    let selectedBranchId = req.query.branchId;
+    let { task, epic, iteration, llm_request, agent } = req.query;
 
-    // Sort projects by created_at DESC to preselect the latest project
     projects.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     if (!selectedProjectId && projects.length > 0) {
       selectedProjectId = projects[0].id; // Preselect the latest project if none is selected
@@ -149,14 +149,23 @@ router.get('/projects', async (req, res) => {
       }
     } else if (selectedProjectId) {
       branches = await getBranchesByProjectId(dbPath, selectedProjectId);
+      branches.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      if (branches.length > 0) {
+        selectedBranchId = branches[0].id; // Preselect the latest branch
+      }
+
       if (selectedBranchId) {
-        projectStates = await getProjectStatesByBranchId(dbPath, selectedBranchId);
+        if (task || epic || iteration || agent) {
+          projectStates = await searchProjectStates(dbPath, { task, epic, iteration, llm_request, agent, branchId: selectedBranchId });
+        } else {
+          projectStates = await getProjectStatesByBranchId(dbPath, selectedBranchId);
+        }
       }
     }
 
-    res.render('projects', { projects, branches, projectStates, selectedProjectId, selectedBranchId });
+    res.render('projects', { projects, branches, projectStates, selectedProjectId, selectedBranchId, task, epic, iteration, llm_request, agent });
   } catch (error) {
-    console.error('Failed to fetch projects, branches, or project states:', error);
+    console.error(`Failed to fetch projects, branches, or project states: ${error}`);
     res.status(500).send('Error fetching data');
   }
 });
@@ -164,16 +173,15 @@ router.get('/projects', async (req, res) => {
 // Detailed data view route for LLM requests
 router.get('/details/llm-requests/:projectStateId', async (req, res) => {
   const { projectStateId } = req.params;
-  const dbPath = global.dbPath; // Assuming the path is stored globally or in a session
+  const dbPath = global.dbPath;
   if (!dbPath) {
     return res.status(400).send('No database file specified.');
   }
   try {
     const details = await getLLMRequestDetailsByProjectStateId(dbPath, projectStateId);
-    // Render a new EJS template or return JSON
-    res.render('details/llmRequests', { details }); // Assuming this EJS template exists
+    res.render('details/llmRequests', { details });
   } catch (error) {
-    console.error(`Failed to fetch LLM request details for project state ID ${projectStateId}:`, error);
+    console.error(`Failed to fetch LLM request details for project state ID ${projectStateId}: ${error}`);
     res.status(500).send('Error fetching LLM request details');
   }
 });
@@ -216,7 +224,7 @@ router.get('/details/:column/:projectStateId', async (req, res) => {
         res.status(400).send('Invalid detail request');
     }
   } catch (error) {
-    console.error(`Failed to fetch details for column ${column} and project state ID ${projectStateId}:`, error);
+    console.error(`Failed to fetch details for column ${column} and project state ID ${projectStateId}: ${error}`);
     res.status(500).send('Error fetching column details');
   }
 });
@@ -234,7 +242,7 @@ router.post('/delete-database', (req, res) => {
   }
   fs.unlink(dbPath, (err) => {
     if (err) {
-      console.error(`Failed to delete database file: ${databaseName}:`, err);
+      console.error(`Failed to delete database file: ${databaseName}: ${err}`);
       return res.status(500).send('Error deleting database file.');
     }
     console.log(`Database file deleted successfully: ${databaseName}`);
