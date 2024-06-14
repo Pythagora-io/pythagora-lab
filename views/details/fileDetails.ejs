@@ -11,18 +11,31 @@
     <div class="">
         <h2>File Details</h2>
         <% if(details && details.length > 0) { %>
-            <% details.forEach(function(detail) { %>
+            <% details.forEach(function(detail, index) { %>
                 <div class="card mb-3">
-                    <div class="card-body">
-                        <% Object.keys(detail).forEach(function(key) { %>
-                            <% if(key !== 'content') { %>
-                                <strong><%= key %>:</strong> <%= detail[key] %><br>
-                            <% } %>
-                        <% }); %>
-                        <% if(detail.content) { %>
-                            <strong>Content:</strong>
-                            <pre><%= detail.content %></pre>
-                        <% } %>
+                    <div id="collapse<%= index %>" class="collapse show" aria-labelledby="heading<%= index %>" data-parent="#accordion">
+                        <div class="card-body">
+                            <strong><%= detail.path %></strong><br><br>
+                            <% Object.keys(detail).forEach(function(key) { %>
+                                <% if(key === 'content') { %>
+                                    <div class="expandable-container" onclick="toggleVisibility('<%= key %>', '<%= index %>')">
+                                        <strong><%= key %>:</strong> (click to expand)
+                                    </div>
+                                    <div id="<%= key %>-<%= index %>" class="container scrollable-container hidden">
+                                        <pre><code><%
+                                              var output;
+                                              try {
+                                                output = JSON.stringify(JSON.parse(detail[key]), null, 2);
+                                              } catch (e) {
+                                                output = detail[key]; // Default to raw output if JSON parsing fails
+                                              }
+                                            %><%= output %></code></pre>
+                                    </div>
+                                <% } else if (key !== 'path') { %>
+                                    <strong><%= key %>:</strong> <%= detail[key] %><br>
+                                <% } %>
+                            <% }); %>
+                        </div>
                     </div>
                 </div>
             <% }); %>

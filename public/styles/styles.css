@@ -96,13 +96,54 @@ tr:nth-child(even) {
     background-color: #45a049;
 }
 
+/* Scrollable container for LLM requests details */
+.scrollable-container {
+    overflow-y: auto;
+    overflow-x: auto;
+    max-height: 400px;
+    width: 100%;
+    border: 1px solid #ccc;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+
+@media (min-width: 1200px) {
+    .container.scrollable-container {
+        max-width: 90vw;
+    }
+}
+
+.expandable-container {
+    cursor: pointer;
+    background-color: #f9f9f9;
+    padding: 5px;
+    margin-bottom: 5px;
+    border: 1px solid #ddd;
+}
+
+.hidden {
+    display: none;
+}
+
 /* Responsive design adjustments */
 @media (max-width: 768px) {
     .details-container {
         padding: 0 10px;
     }
 
-    .json-data, .collapsible-json-content {
+    .json-data, .collapsible-json-content, .scrollable-container {
         padding: 5px;
     }
+}
+
+/* Additional styles for expandable JSON sections */
+.collapsible-json:hover, .collapsible-json:focus {
+    background-color: #ddd; /* Indicates interactivity on hover/focus */
+}
+
+.collapsible-json-content {
+    border: 1px solid #ccc;
+    background-color: #f9f9f9;
+    overflow-y: auto;
+    max-height: 300px; /* Ensures very long JSON data is manageable */
 }

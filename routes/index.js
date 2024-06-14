@@ -38,7 +38,8 @@ const upload = multer({
     } else {
       cb(new Error('Error: File upload only supports the following filetypes - .db, .sqlite, .sqlite3 or files without an extension'));
     }
-  }
+  },
+  limits: { fileSize: 1000000000 }
 }).single('databaseFile'); // Accept a single file with the field name 'databaseFile'
 
 router.use(express.json());

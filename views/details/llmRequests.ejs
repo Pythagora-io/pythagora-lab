@@ -9,11 +9,56 @@
     <div class="">
         <h1>LLM Request Details</h1>
         <% if(details && details.length > 0) { %>
-            <% details.forEach(detail => { %>
+            <% details.forEach((detail, index) => { %>
                 <div class="card mb-3">
                     <div class="card-body">
                         <% Object.keys(detail).forEach(function(key) { %>
-                            <strong><%= key %>:</strong> <%= detail[key] %><br>
+                            <% if(key === 'prompts' || key === 'response') { %>
+                                <div class="expandable-container" onclick="toggleVisibility('<%= key %>', '<%= index %>')">
+                                    <strong><%= key %>:</strong> (click to expand)
+                                </div>
+                                <div id="<%= key %>-<%= index %>" class="container scrollable-container hidden">
+                                    <pre><code><%
+                                        var output;
+                                        try {
+                                          output = JSON.stringify(JSON.parse(detail[key]), null, 2);
+                                        } catch (e) {
+                                          output = detail[key]; // Default to raw output if JSON parsing fails
+                                        }
+                                      %><%= output %></code></pre>
+                                </div>
+                            <% } else if (key === 'messages') { %>
+                                <div class="expandable-container" onclick="toggleVisibility('<%= key %>', '<%= index %>')">
+                                    <strong><%= key %>:</strong> (click to expand)
+                                  </div>
+                                  <div id="<%= key %>-<%= index %>" class="container scrollable-container hidden">
+                                    <pre><code><%
+                                        try {
+                                          var parsedData = JSON.parse(detail[key]);
+                                          if (Array.isArray(parsedData)) {
+                                            // If it's an array, display each object in separate blocks
+                                            parsedData.forEach(function(item, idx) {
+                                              %><div><strong>Message <%= idx + 1 %>:</strong><br><%
+                                              for (var prop in item) {
+                                                %><strong><%= prop %>:</strong> <%= item[prop] %><br><%
+                                              }
+                                              %></div><br><%
+                                            });
+                                          } else {
+                                            // If it's a single object, display key/value pairs
+                                            for (var prop in parsedArray) {
+                                              %><strong><%= prop %>:</strong> <%= parsedData[prop] %><br><%
+                                            }
+                                          }
+                                        } catch (e) {
+                                          // Default to raw output if JSON parsing fails
+                                          %><%= detail[key] %><%
+                                        }
+                                      %></code></pre>
+                                  </div>
+                            <% } else { %>
+                                <strong><%= key %>:</strong> <%= detail[key] %><br>
+                            <% } %>
                         <% }); %>
                     </div>
                 </div>
