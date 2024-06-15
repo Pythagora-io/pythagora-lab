@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iteration Details</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <div class="">
+        <h2>Iteration Details</h2>
+        <% if(details && details.length > 0) { %>
+            <% details.forEach(function(detail, index) { %>
+                <div class="card mb-3">
+                    <div id="collapse<%= index %>" class="collapse show" aria-labelledby="heading<%= index %>" data-parent="#accordion">
+                        <div class="card-body">
+                            <strong>Iteration <%= index %></strong>
+                            <% Object.keys(detail).forEach(function(key) { %>
+                                <% if (key === 'description') { %>
+                                    <div class="expandable-container" onclick="toggleVisibility('<%= key %>', '<%= index %>')">
+                                        <strong><%= key %>:</strong> (click to expand)
+                                    </div>
+                                    <div id="<%= key %>-<%= index %>" class="hidden">
+                                        <textarea style="width: 100%;"><%
+                                              var output;
+                                              try {
+                                                output = JSON.stringify(JSON.parse(detail[key]), null, 2);
+                                              } catch (e) {
+                                                output = detail[key]; // Default to raw output if JSON parsing fails
+                                              }
+                                            %><%= output %></textarea>
+                                    </div>
+                                <% } else if (key === 'user_feedback_qa' || key === 'alternative_solutions') { %>
+                                    <div class="expandable-container" onclick="toggleVisibility('<%= key %>', '<%= index %>')">
+                                        <strong><%= key %>:</strong> (click to expand)
+                                    </div>
+                                    <div id="<%= key %>-<%= index %>" class="container scrollable-container hidden">
+                                        <%
+                                          try {
+                                            var parsedData = detail[key];
+                                            parsedData.forEach(function(item, idx) {
+                                              for (var prop in item) {
+                                                %><strong><%= prop %>:</strong> <%= item[prop] %><br><%
+                                              }
+                                              %><br><%
+                                            });
+                                          } catch (e) {
+                                            // Default to raw output if JSON parsing fails
+                                            %><%= detail[key] %><%
+                                          }
+                                        %>
+                                    </div>
+                                <% } else { %>
+                                    <strong><%= key %>:</strong> <%= detail[key] %><br>
+                                <% } %>                                
+                                <br>
+                            <% }); %>
+                        </div>
+                    </div>
+                </div>
+            <% }); %>
+        <% } else { %>
+            <p>No iteration details available.</p>
+        <% } %>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+</body>
+</html>

@@ -14,7 +14,7 @@
             z-index: 100;
         }
         .project-states-container {
-            height: calc(100vh - 150px); /* Adjust based on actual header and form heights */
+            height: calc(100vh - 250px); /* Adjust based on actual header and form heights */
             overflow-y: scroll;
         }
         /* Full width for the details section */
@@ -88,6 +88,7 @@
                             <th>ID</th>
                             <th>Epic</th>
                             <th>Task</th>
+                            <th>Iterations</th>
                             <th>Step</th>
                             <th>LLM requests</th>
                             <th>Prompts</th>
@@ -111,6 +112,7 @@
                                     %>
                                     <%= Math.min(completed_tasks.length + 1, tasks.length) %> / <%= tasks.length %>
                                 </a></td>
+                                <td><a href="javascript:void(0)" onclick="fetchDetails('iteration', <%= state.id %>)" class="detail-link" data-detail-type="iteration" data-project-state-id="<%= state.id %>"><%= JSON.parse(state.iterations).length %></a></td>
                                 <td><a href="javascript:void(0)" class="detail-link" data-detail-type="step" data-project-state-id="<%= state.id %>">
                                     <%
                                         let steps = JSON.parse(state.steps);
@@ -122,8 +124,9 @@
                                     <%= state.llm_request_count %>
                                 </a></td>
                                 <td>
-                                    <% state.aggregated_prompts.forEach((p) => { %>
-                                        <div><%= JSON.parse(p).template %></div>
+                                    <%
+                                    state.templates.forEach((t) => { %>
+                                        <div><%= t %></div>
                                     <% }); %>
                                 </td>
                                 <td>

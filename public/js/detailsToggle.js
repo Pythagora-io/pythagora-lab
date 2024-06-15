@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', function() {
         link.addEventListener('click', function(event) {
             event.preventDefault(); // Prevent the default link behavior
 
-            const detailType = this.getAttribute('data-detail-type'); // Get the type of detail (epic, task, step, etc.)
+            const detailType = this.getAttribute('data-detail-type'); // Get the type of detail (epic, task, step, iteration, etc.)
             const projectStateId = this.getAttribute('data-project-state-id'); // Get the project state ID
             const detailRowId = `details-${detailType}-${projectStateId}`;
 

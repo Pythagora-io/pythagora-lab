@@ -193,49 +193,68 @@ function searchProjectStates(dbPath, criteria) {
  */
 function getProjectStatesByBranchId(dbPath, branchId) {
     return new Promise((resolve, reject) => {
-        let divider = '-----'
         loadDatabase(dbPath).then(db => {
             const query = `
-                SELECT ps.*,
-                       (SELECT COUNT(*) FROM llm_requests WHERE project_state_id = ps.id) AS llm_request_count,
-                       (SELECT COUNT(*) FROM user_inputs WHERE project_state_id = ps.id) AS user_inputs_count,
-                       (SELECT COUNT(*) FROM files WHERE project_state_id = ps.id) AS files_count,
-                       (SELECT GROUP_CONCAT(prompts, '${divider}') FROM llm_requests WHERE project_state_id = ps.id) AS aggregated_prompts,
-                       (SELECT GROUP_CONCAT(agent, '${divider}') FROM llm_requests WHERE project_state_id = ps.id) AS agents
+                SELECT *,
+                    (SELECT COUNT(*) FROM llm_requests WHERE project_state_id = ps.id) AS llm_request_count,
+                    (SELECT COUNT(*) FROM user_inputs WHERE project_state_id = ps.id) AS user_inputs_count,
+                    (SELECT COUNT(*) FROM files WHERE project_state_id = ps.id) AS files_count,
+                    (SELECT GROUP_CONCAT(agent) FROM llm_requests WHERE project_state_id = ps.id GROUP BY agent) AS agents
                 FROM project_states ps
                 WHERE ps.branch_id = ?
             `;
             db.all(query, [branchId], (err, rows) => {
                 if (err) {
-                    console.error('Error fetching project states, LLM request counts, and aggregated prompts:', err.message);
+                    console.error('Error fetching project states, LLM request counts, and agent names:', err.message);
                     reject(err);
                 } else {
-                    let updatedRows = rows.map(row => {
-                        let new_prompts = [];
-                        (row.aggregated_prompts || '').split(divider).forEach(element => {
-                            if (element) {
-                                JSON.parse(element).forEach(e => {
-                                    new_prompts.push(JSON.stringify(e));
+                    let detailedRowsPromises = rows.map(row => {
+                        return new Promise((innerResolve, innerReject) => {
+                            const promptQuery = `
+                                SELECT prompts, agent
+                                FROM llm_requests
+                                WHERE project_state_id = ?
+                            `;
+                            db.all(promptQuery, [row.id], (promptErr, promptResults) => {
+                                if (promptErr) {
+                                    innerReject(promptErr);
+                                    return;
+                                }
+                                // Extracting the 'template' field from each prompt's JSON
+                                let templates = promptResults.map(promptRow => {
+                                    let parsedPrompt = JSON.parse(promptRow.prompts);
+                                    // Assuming that 'parsedPrompt' is an array of objects, and we need the 'template' from each
+                                    return parsedPrompt.map(item => item.template);
+                                }).flat();
+                                innerResolve({
+                                    ...row,
+                                    agents: row.agents ? row.agents.split(',') : [],
+                                    templates: templates
                                 });
-                            }
+                            });
                         });
-                        return {
-                            ...row,
-                            aggregated_prompts: new_prompts,
-                            agents: row.agents ? row.agents.split(divider) : ''
-                        };
                     });
 
-                    resolve(updatedRows);
+                    Promise.all(detailedRowsPromises)
+                        .then(detailedRows => {
+                            resolve(detailedRows);
+                            db.close();
+                        })
+                        .catch(detailErr => {
+                            console.error('Error while fetching prompts for project states:', detailErr);
+                            reject(detailErr);
+                            db.close();
+                        });
                 }
-                db.close();
             });
         }).catch(error => {
-            console.error('Failed to load database for fetching project states, LLM request counts, and aggregated prompts:', error.message);
+            console.error('Failed to load database for fetching project states:', error.message);
             reject(error);
         });
     });
 }
+
+
 
 module.exports = {
     loadDatabase,

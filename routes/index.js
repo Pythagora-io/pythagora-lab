@@ -4,7 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const sqlite3 = require('sqlite3').verbose();
 const { getProjects, getBranchesByProjectId, getProjectStatesByBranchId, searchProjectStates } = require('../utils/projectQueries');
-const { getLLMRequestDetailsByProjectStateId, getEpicDetailsByProjectStateId, getTaskDetailsByProjectStateId, getStepDetailsByProjectStateId, getFileDetailsByProjectStateId, getUserInputDetailsByProjectStateId } = require('../utils/detailQueries');
+const { getLLMRequestDetailsByProjectStateId, getEpicDetailsByProjectStateId, getTaskDetailsByProjectStateId, getStepDetailsByProjectStateId, getFileDetailsByProjectStateId, getUserInputDetailsByProjectStateId, getIterationDetailsByProjectStateId } = require('../utils/detailQueries');
 const router = express.Router();
 
 // Ensure uploads directory exists
@@ -220,6 +220,10 @@ router.get('/details/:column/:projectStateId', async (req, res) => {
       case 'llmRequests':
         details = await getLLMRequestDetailsByProjectStateId(dbPath, projectStateId);
         res.render('details/llmRequests', { details });
+        break;
+      case 'iteration':
+        details = await getIterationDetailsByProjectStateId(dbPath, projectStateId);
+        res.render('details/iterationDetails', { details });
         break;
       default:
         res.status(400).send('Invalid detail request');

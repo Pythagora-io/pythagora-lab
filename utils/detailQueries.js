@@ -211,6 +211,46 @@ function getUserInputDetailsByProjectStateId(dbPath, projectStateId) {
     });
 }
 
+/**
+ * Fetches detailed data for the 'iterations' column in a project state.
+ * @param {string} dbPath Path to the SQLite database file.
+ * @param {string} projectStateId The ID of the project state for which iteration details are retrieved.
+ * @returns {Promise<Array>} A promise that resolves with the iteration details for the given project state ID.
+ */
+function getIterationDetailsByProjectStateId(dbPath, projectStateId) {
+    return new Promise((resolve, reject) => {
+        const db = new sqlite3.Database(dbPath, sqlite3.OPEN_READONLY, (err) => {
+            if (err) {
+                console.error('Error opening database for iteration details:', err.message);
+                reject(err);
+            } else {
+                const query = 'SELECT iterations FROM project_states WHERE id = ?';
+                db.get(query, [projectStateId], (err, row) => {
+                    if (err) {
+                        console.error('Error fetching iteration details:', err.message);
+                        reject(err);
+                    } else {
+                        if (row && row.iterations) {
+                            try {
+                                const iterations = JSON.parse(row.iterations);
+                                console.log(`Fetched iteration details successfully for project state ID projectState: ${projectStateId}.`);
+                                resolve(iterations);
+                            } catch (parseErr) {
+                                console.error('Error parsing iteration details:', parseErr.message);
+                                reject(parseErr);
+                            }
+                        } else {
+                            console.log(`No iteration details found for project state ID ${projectStateId}.`);
+                            resolve([]);
+                        }
+                    }
+                    db.close();
+                });
+            }
+        });
+    });
+}
+
 module.exports = {
     getLLMRequestDetailsByProjectStateId,
     getEpicDetailsByProjectStateId,
@@ -218,4 +258,5 @@ module.exports = {
     getStepDetailsByProjectStateId,
     getFileDetailsByProjectStateId,
     getUserInputDetailsByProjectStateId,
+    getIterationDetailsByProjectStateId,
 };
