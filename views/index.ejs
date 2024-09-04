@@ -14,6 +14,10 @@
         <label for="databaseFile">Upload Database File</label>
         <input type="file" class="form-control-file" id="databaseFile" name="databaseFile">
       </div>
+      <div class="form-group">
+        <label for="description">Description</label>
+        <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+      </div>
       <button type="submit" class="btn btn-primary">Upload</button>
     </form>
     <hr>
@@ -22,7 +26,9 @@
       <thead>
         <tr>
           <th>Database Name</th>
+          <th>Description</th>
           <th>Rename</th>
+          <th>Edit Description</th>
           <th>Select</th>
           <th>Delete</th>
         </tr>
@@ -30,22 +36,30 @@
       <tbody>
         <% databases.forEach(function(database) { %>
           <tr>
-            <td><%= database %></td>
+            <td><%= database.name %></td>
+            <td><%= database.description %></td>
             <td>
               <form action="/rename-database" method="post" onsubmit="return confirm('Are you sure you want to rename this database?');" class="form-inline">
-                <input type="hidden" name="oldName" value="<%= database %>">
+                <input type="hidden" name="oldName" value="<%= database.name %>">
                 <input type="text" name="newName" placeholder="New name" required class="form-control mr-2">
                 <button type="submit" class="btn btn-info">Rename</button>
               </form>
             </td>
             <td>
+              <form action="/edit-description" method="post" class="form-inline">
+                <input type="hidden" name="databaseName" value="<%= database.name %>">
+                <input type="text" name="newDescription" value="<%= database.description %>" required class="form-control mr-2">
+                <button type="submit" class="btn btn-info">Edit</button>
+              </form>
+            </td>
+            <td>
               <form action="/select-database" method="post">
-                <button type="submit" class="btn btn-secondary" name="selectedDatabase" value="<%= database %>">Select</button>
+                <button type="submit" class="btn btn-secondary" name="selectedDatabase" value="<%= database.name %>">Select</button>
               </form>
             </td>
             <td>
               <form action="/delete-database" method="post" onsubmit="return confirm('Are you sure you want to delete this database?');">
-                <input type="hidden" name="databaseName" value="<%= database %>">
+                <input type="hidden" name="databaseName" value="<%= database.name %>">
                 <button type="submit" class="btn btn-danger">Delete</button>
               </form>
             </td>

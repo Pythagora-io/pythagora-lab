@@ -5,6 +5,7 @@ const fs = require('fs');
 const sqlite3 = require('sqlite3').verbose();
 const { getProjects, getBranchesByProjectId, getProjectStatesByBranchId, searchProjectStates } = require('../utils/projectQueries');
 const { getLLMRequestDetailsByProjectStateId, getEpicDetailsByProjectStateId, getTaskDetailsByProjectStateId, getStepDetailsByProjectStateId, getFileDetailsByProjectStateId, getUserInputDetailsByProjectStateId, getIterationDetailsByProjectStateId } = require('../utils/detailQueries');
+const { addDatabaseDescription, updateDatabaseDescription, getDatabaseDescription, saveDatabaseInfo, loadDatabaseInfo } = require('../utils/databaseInfo');
 const router = express.Router();
 
 // Ensure uploads directory exists
@@ -40,7 +41,8 @@ const upload = multer({
     }
   },
   limits: { fileSize: 1000000000 }
-}).single('databaseFile'); // Accept a single file with the field name 'databaseFile'
+}).fields([{ name: 'databaseFile', maxCount: 1 }, { name: 'description', maxCount: 1 }]); // Updated to accept description
+
 
 router.use(express.json());
 router.use(express.urlencoded({ extended: true }));
@@ -52,8 +54,12 @@ router.get('/', (req, res) => {
       console.error(`Failed to read uploads directory: ${err}`);
       return res.status(500).send('Error reading uploads directory');
     }
-    // Include files without an extension in the list
-    const databases = files.filter(file => /\.(sqlite|sqlite3|db)$/.test(path.extname(file).toLowerCase()) || path.extname(file) === '');
+    const databases = files
+      .filter(file => /\.(sqlite|sqlite3|db)$/.test(path.extname(file).toLowerCase()) || path.extname(file) === '')
+      .map(file => ({
+        name: file,
+        description: getDatabaseDescription(file)
+      }));
     res.render('index', { databases });
   });
 });
@@ -73,7 +79,8 @@ router.post('/select-database', (req, res) => {
 // Rename database route
 router.post('/rename-database', (req, res) => {
   const oldName = req.body.oldName;
-  const newName = req.body.newName;
+  const newName = path.basename(req.body.newName); // Sanitize the new name to prevent directory traversal
+  console.log(`Attempting to rename database from ${oldName} to ${newName}`);
   if (!oldName || !newName) {
     return res.status(400).send('Old name and new name must be provided');
   }
@@ -82,9 +89,17 @@ router.post('/rename-database', (req, res) => {
   fs.rename(oldPath, newPath, (err) => {
     if (err) {
       console.error(`Failed to rename database from ${oldName} to ${newName}: ${err}`);
-      return res.status(500).send('Error renaming database');
+      return res.status(500).send(`Error renaming database: ${err.message}`);
     }
     console.log(`Database renamed from ${oldName} to ${newName}`);
+    console.log(`Updating database info for renamed database`);
+    const info = loadDatabaseInfo();
+    if (info[oldName]) {
+      info[newName] = { ...info[oldName], name: newName };
+      delete info[oldName];
+      saveDatabaseInfo(info);
+      console.log(`Database info updated successfully.`);
+    }
     res.redirect('/');
   });
 });
@@ -96,28 +111,29 @@ router.post('/upload', (req, res) => {
       console.error(`File upload error: ${err}`);
       return res.status(500).send(err.message);
     }
-    if (req.file == undefined) {
-      console.log('No file selected.');
-      return res.status(400).send('Error: No file selected');
+    if (!req.files || !req.files.databaseFile || req.files.databaseFile.length === 0) {
+      console.log('No database file selected.');
+      return res.status(400).send('Error: No database file selected');
     } else {
-      console.log(`File uploaded successfully: ${req.file.filename}`);
-      // Attempt to open the uploaded database file to verify it's a valid SQLite file
-      const dbPath = path.join(uploadsDir, req.file.filename);
+      const databaseFile = req.files.databaseFile[0];
+      console.log(`File uploaded successfully: ${databaseFile.filename}`);
+      const dbPath = path.join(uploadsDir, databaseFile.filename);
       const db = new sqlite3.Database(dbPath, sqlite3.OPEN_READONLY, (dbErr) => {
         if (dbErr) {
           console.error(`Error opening database file: ${dbErr.message}`);
           fs.unlink(dbPath, (unlinkErr) => {
             if (unlinkErr) console.error(`Error removing invalid database file: ${unlinkErr.message}`);
-            else console.log(`Invalid database file removed: ${req.file.filename}`);
+            else console.log(`Invalid database file removed: ${databaseFile.filename}`);
           });
           return res.status(400).send('Error: Uploaded file is not a valid SQLite database');
         } else {
-          console.log(`Database file verified successfully: ${req.file.filename}`);
+          console.log(`Database file verified successfully: ${databaseFile.filename}`);
           db.close();
-          // Store the database path in a session or a secure place
-          // For this example, we'll simulate storing the path in a global variable
-          // IMPORTANT: This is not a secure practice and should be replaced with a session or similar approach
-          global.dbPath = dbPath; // Replace global variable with secure storage mechanism
+          const description = req.body.description;
+          console.log(`Description: ${description}`);
+          console.log(`Adding description for database: ${databaseFile.filename}`);
+          addDatabaseDescription(databaseFile.filename, description);
+          global.dbPath = dbPath;
           res.redirect('/projects');
         }
       });
@@ -251,8 +267,24 @@ router.post('/delete-database', (req, res) => {
       return res.status(500).send('Error deleting database file.');
     }
     console.log(`Database file deleted successfully: ${databaseName}`);
+    const info = loadDatabaseInfo();
+    delete info[databaseName];
+    saveDatabaseInfo(info);
+    console.log(`Database description deleted successfully: ${databaseName}`);
     res.redirect('/');
   });
+});
+
+// New route for editing database descriptions
+router.post('/edit-description', (req, res) => {
+  const { databaseName, newDescription } = req.body;
+  if (updateDatabaseDescription(databaseName, newDescription)) {
+    console.log(`Description updated for database: ${databaseName}`);
+    res.redirect('/');
+  } else {
+    console.error(`Failed to update description for database: ${databaseName}`);
+    res.status(404).send('Database not found');
+  }
 });
 
 module.exports = router;
