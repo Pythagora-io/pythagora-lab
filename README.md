@@ -1,67 +1,92 @@
-```
 # Pythagora Lab
 
-Pythagora Lab is an interactive web application designed to provide users with the ability to view and analyze data stored in SQLite databases. It focuses on project management data, enabling users to load databases from the disk, select projects and branches, and delve into detailed project states, including tasks, files, and LLM requests/responses.
+Pythagora Lab is a web application designed for interactive viewing and analysis of data from SQLite databases. It allows users to upload SQLite databases, select projects, and explore detailed project states including tasks, files, LLM requests/responses, and more. The application is built using Node.js, Express, SQLite, EJS, and Bootstrap.
 
 ## Overview
 
-The application utilizes a traditional web architecture with a Node.js backend leveraging Express for routing and SQLite for database management. The frontend is built using Bootstrap for responsive design and EJS for server-side templating. This setup allows for dynamic content rendering based on user interactions, such as database selection and project analysis.
+Pythagora Lab features a robust architecture that integrates a Node.js backend with Express for routing, SQLite for data storage, and EJS for server-side templating. The frontend is styled with Bootstrap to ensure a responsive and user-friendly interface. The project structure is organized as follows:
+
+- **Backend**: Node.js with Express
+- **Database**: SQLite
+- **Templating**: EJS
+- **Styling**: Bootstrap
 
 ### Project Structure
 
-- **Backend**: Node.js and Express are used to handle server-side logic, including file uploads, database parsing, and data serving.
-- **Database**: SQLite databases store project data, which can be uploaded by users for analysis.
-- **Frontend**: Bootstrap and EJS provide a user-friendly interface for interacting with the application. JavaScript is used to enhance interactivity, such as details toggling and search filtering.
+```
+├── public/
+│   ├── js/
+│   │   ├── deleteDatabase.js
+│   │   ├── detailsToggle.js
+│   │   ├── formatJson.js
+│   │   └── toggleVisibility.js
+│   └── styles/
+│       └── styles.css
+├── routes/
+│   └── index.js
+├── utils/
+│   ├── databaseInfo.js
+│   ├── db.js
+│   ├── detailQueries.js
+│   └── projectQueries.js
+├── views/
+│   ├── details/
+│   │   ├── epicDetails.ejs
+│   │   ├── fileDetails.ejs
+│   │   ├── iterationDetails.ejs
+│   │   ├── llmRequests.ejs
+│   │   ├── stepDetails.ejs
+│   │   ├── taskDetails.ejs
+│   │   └── userInputDetails.ejs
+│   ├── index.ejs
+│   └── projects.ejs
+├── .gitignore
+├── package.json
+├── server.js
+└── database_info.json
+```
 
 ## Features
 
-- **Database Upload**: Users can upload SQLite database files to analyze project data.
-- **Project Selection**: Dynamically generated dropdowns allow users to select projects and branches to analyze.
-- **Detailed Analysis**: Users can explore detailed project states, including tasks, files, LLM requests/responses, and user inputs.
-- **Interactive Search**: Search bars above each column enable users to filter project states based on specific criteria.
+- **Database Upload**: Users can upload SQLite databases and provide descriptions.
+- **Project Selection**: Users can select projects and branches to view related data.
+- **Project State Analysis**: Users can view detailed project states, including tasks, LLM requests, files, and user inputs.
+- **Search Functionality**: Each column in the project state table has a search bar for filtering data.
+- **Detailed Views**: Clicking on specific columns provides detailed information about that data.
+- **Database Management**: Users can rename, edit descriptions, and delete databases.
 
 ## Getting Started
 
 ### Requirements
 
-- Node.js
-- SQLite
-- Express
-- sqlite3 (Node.js package)
-- multer (for handling multipart/form-data)
-- ejs (for templating)
-- Bootstrap (for styling)
+Ensure you have the following installed on your computer:
+
+- **Node.js** (v14.x or later)
+- **npm** (v6.x or later)
 
 ### Quickstart
 
-1. **Clone the repository**
-
-   ```
-   git clone https://example.com/pythagora-lab.git
+1. **Clone the repository**:
+   ```bash
+   git clone <repository-url>
    cd pythagora-lab
    ```
 
-2. **Install dependencies**
-
-   ```
+2. **Install dependencies**:
+   ```bash
    npm install
    ```
 
-3. **Start the application**
-
+3. **Run the application**:
+   ```bash
+   node server.js
    ```
-   npm start
-   ```
 
-   This will start the server on `http://localhost:3000`.
-
-4. **Access the application**
-
-   Open your web browser and navigate to `http://localhost:3000` to start using Pythagora Lab.
+4. **Access the application**:
+   Open your web browser and navigate to `http://localhost:3000`.
 
 ### License
 
+```
 Copyright (c) 2024.
-
-This software is proprietary and may not be copied, modified, or distributed without the express written consent of the copyright owner.
 ```

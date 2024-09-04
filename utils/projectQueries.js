@@ -254,8 +254,6 @@ function getProjectStatesByBranchId(dbPath, branchId) {
     });
 }
 
-
-
 module.exports = {
     loadDatabase,
     getProjects,

@@ -147,3 +147,28 @@ tr:nth-child(even) {
     overflow-y: auto;
     max-height: 300px; /* Ensures very long JSON data is manageable */
 }
+
+/* Adjustments for new 'Action' column in project states table */
+th, td {
+    padding: 8px;
+    text-align: left;
+    white-space: nowrap; /* Ensure text in each cell does not wrap */
+}
+
+/* Ensuring table layout accommodates the new 'Action' column */
+table {
+    table-layout: fixed;
+}
+
+/* Specific width adjustments for table columns to accommodate 'Action' column */
+th:nth-child(1), td:nth-child(1) { width: 5%; }
+th:nth-child(2), td:nth-child(2),
+th:nth-child(3), td:nth-child(3),
+th:nth-child(4), td:nth-child(4),
+th:nth-child(5), td:nth-child(5),
+th:nth-child(6), td:nth-child(6),
+th:nth-child(7), td:nth-child(7),
+th:nth-child(8), td:nth-child(8),
+th:nth-child(9), td:nth-child(9),
+th:nth-child(10), td:nth-child(10) { width: auto; } /* Adjust based on content */
+th:nth-child(11), td:nth-child(11) { width: 10%; } /* New 'Action' column width */

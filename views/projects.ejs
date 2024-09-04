@@ -95,6 +95,7 @@
                             <th>Agent</th>
                             <th>Files</th>
                             <th>User inputs</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -123,13 +124,13 @@
                                 <td><a href="javascript:void(0)" class="detail-link" data-detail-type="llmRequests" data-project-state-id="<%= state.id %>">
                                     <%= state.llm_request_count %>
                                 </a></td>
-                                <td>
+                                <td style="overflow: scroll;">
                                     <%
                                     state.templates.forEach((t) => { %>
                                         <div><%= t %></div>
                                     <% }); %>
                                 </td>
-                                <td>
+                                <td style="overflow: scroll;">
                                     <% if (state.agents) state.agents.forEach((p) => { %>
                                         <div><%= p %></div>
                                     <% }); %>
@@ -140,6 +141,7 @@
                                 <td><a href="javascript:void(0)" class="detail-link" data-detail-type="userInputs" data-project-state-id="<%= state.id %>">
                                     <%= state.user_inputs_count %>
                                 </a></td>
+                                <td style="overflow: scroll;"><%= state.action %></td>
                             </tr>
                         <% }); %>
                     </tbody>
@@ -160,7 +162,7 @@
                 type: 'GET',
                 success: function(data) {
                     // Assuming the server responds with an HTML snippet to be displayed
-                    const detailRow = `<tr><td colspan="10">${data}</td></tr>`;
+                    const detailRow = `<tr><td colspan="11">${data}</td></tr>`;
                     jQuery(`a[data-detail-type="${type}"][data-project-state-id="${id}"]`).closest('tr').after(detailRow);
                 },
                 error: function(error) {
