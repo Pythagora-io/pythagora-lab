@@ -11,6 +11,7 @@
   "license": "ISC",
   "dependencies": {
     "bootstrap": "^5.3.3",
+    "diff2html": "^3.4.48",
     "ejs": "^3.1.10",
     "express": "^4.19.2",
     "multer": "^1.4.5-lts.1",

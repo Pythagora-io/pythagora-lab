@@ -3,7 +3,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const sqlite3 = require('sqlite3').verbose();
-const { getProjects, getBranchesByProjectId, getProjectStatesByBranchId, searchProjectStates } = require('../utils/projectQueries');
+const { getProjects, getBranchesByProjectId, getProjectStatesByBranchId, searchProjectStates, getPreviousTaskProjectState, getFileContentsByProjectStateId, getFileContentsForProjectStates } = require('../utils/projectQueries');
 const { getLLMRequestDetailsByProjectStateId, getEpicDetailsByProjectStateId, getTaskDetailsByProjectStateId, getStepDetailsByProjectStateId, getFileDetailsByProjectStateId, getUserInputDetailsByProjectStateId, getIterationDetailsByProjectStateId } = require('../utils/detailQueries');
 const { addDatabaseDescription, updateDatabaseDescription, getDatabaseDescription, saveDatabaseInfo, loadDatabaseInfo } = require('../utils/databaseInfo');
 const router = express.Router();
@@ -155,6 +155,9 @@ router.get('/projects', async (req, res) => {
     let selectedBranchId = req.query.branchId;
     let { task, epic, iteration, llm_request, agent } = req.query;
 
+    console.log('Selected Project ID:', selectedProjectId);
+    console.log('Selected Branch ID:', selectedBranchId);
+
     projects.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     if (!selectedProjectId && projects.length > 0) {
       selectedProjectId = projects[0].id; // Preselect the latest project if none is selected
@@ -171,14 +174,26 @@ router.get('/projects', async (req, res) => {
         selectedBranchId = branches[0].id; // Preselect the latest branch
       }
 
+      console.log('Branches:', branches);
+      console.log('Selected Branch ID after sorting:', selectedBranchId);
+
       if (selectedBranchId) {
         if (task || epic || iteration || agent) {
           projectStates = await searchProjectStates(dbPath, { task, epic, iteration, llm_request, agent, branchId: selectedBranchId });
         } else {
           projectStates = await getProjectStatesByBranchId(dbPath, selectedBranchId);
         }
+        console.log('Project States:', projectStates.map(ps => ({ id: ps.id, step_index: ps.step_index })));
       }
     }
+
+    console.log('Rendering projects view with:', {
+      projectsCount: projects.length,
+      branchesCount: branches.length,
+      projectStatesCount: projectStates.length,
+      selectedProjectId,
+      selectedBranchId
+    });
 
     res.render('projects', { projects, branches, projectStates, selectedProjectId, selectedBranchId, task, epic, iteration, llm_request, agent });
   } catch (error) {
@@ -284,6 +299,39 @@ router.post('/edit-description', (req, res) => {
   } else {
     console.error(`Failed to update description for database: ${databaseName}`);
     res.status(404).send('Database not found');
+  }
+});
+
+// New route '/diff' to handle diff requests
+router.post('/diff', async (req, res) => {
+  const { projectStateId, branchId } = req.body;
+  if (!projectStateId || !branchId) {
+    return res.status(400).send('Project state ID and branch ID are required.');
+  }
+  try {
+    const currentTaskId = parseInt(projectStateId); // Assuming projectStateId is the current task ID for this example
+    const previousProjectStateId = await getPreviousTaskProjectState(global.dbPath, branchId, projectStateId, currentTaskId);
+    const fileContentsForStates = await getFileContentsForProjectStates(global.dbPath, [previousProjectStateId, projectStateId]);
+
+    const currentFiles = fileContentsForStates[projectStateId];
+    const previousFiles = fileContentsForStates[previousProjectStateId] || [];
+
+    const changedFiles = currentFiles.filter(cf => {
+      const pf = previousFiles.find(pf => pf.path === cf.path);
+      return !pf || pf.content !== cf.content;
+    }).map(file => file.path);
+
+    const response = {
+        changedFiles: changedFiles,
+        currentFiles: currentFiles.reduce((acc, cur) => ({ ...acc, [cur.path]: cur.content || 'Content not available' }), {}),
+        previousFiles: previousFiles.reduce((acc, cur) => ({ ...acc, [cur.path]: cur.content || 'Content not available' }), {})
+    };
+
+    res.json(response);
+  } catch (error) {
+    console.error(`Error processing diff request: ${error}`);
+    console.log('Error stack:', error.stack);
+    res.status(500).send('Error processing diff request');
   }
 });
 

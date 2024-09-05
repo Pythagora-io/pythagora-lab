@@ -1,4 +1,4 @@
-// This script is responsible for handling the unfolding of details for project states in the Pythagora Lab application.
+// This script is responsible for handling the unfolding of details for project states in the Pythagora Lab application and managing 'Show diff' button events.
 
 document.addEventListener('DOMContentLoaded', function() {
     // Attach click event listeners to all detail links in the project states table
@@ -39,8 +39,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
                     detailRow.appendChild(detailCell);
                     this.closest('tr').after(detailRow); // Insert the new row after the current row
-
-                    console.log(`Details for ${detailType} with ID ${projectStateId} fetched successfully.`);
                 })
                 .catch(error => {
                     console.error('Error fetching details:', error);
@@ -48,4 +46,75 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
         });
     });
+
+    // Add event listener for 'Show diff' buttons
+    document.querySelectorAll('.show-diff-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const projectStateId = this.getAttribute('data-project-state-id');
+            const branchId = this.getAttribute('data-branch-id');
+
+            if (!projectStateId || !branchId) {
+                console.error('Missing projectStateId or branchId:', { projectStateId, branchId });
+                alert('Error: Missing project state ID or branch ID');
+                return;
+            }
+
+            fetch(`/diff`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ projectStateId, branchId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                displayChangedFiles(data.changedFiles, this);
+            })
+            .catch(error => {
+                console.error('Error fetching diff:', error);
+                alert('Error fetching diff. Please try again.');
+            });
+        });
+    });
+
+    function displayChangedFiles(changedFiles, clickedButton) {
+        const diffSection = document.getElementById('diffSection');
+        const changedFilesList = document.getElementById('changedFilesList');
+        const fileDiffContent = document.getElementById('fileDiffContent');
+
+        if (!diffSection || !changedFilesList || !fileDiffContent) {
+            console.error('One or more required elements not found in the DOM');
+            return;
+        }
+
+        // Clear previous content
+        [changedFilesList, fileDiffContent].forEach(element => element.innerHTML = '');
+
+        // Display the diff section with noticeable styling
+        diffSection.style.display = 'block';
+
+        // Add changed files to the list
+        changedFiles.forEach(file => {
+            const listItem = document.createElement('a');
+            listItem.href = '#';
+            listItem.className = 'list-group-item list-group-item-action';
+            listItem.textContent = file;
+            listItem.setAttribute('data-project-state-id', clickedButton.getAttribute('data-project-state-id'));
+            listItem.setAttribute('data-branch-id', clickedButton.getAttribute('data-branch-id'));
+            changedFilesList.appendChild(listItem);
+        });
+
+        if (changedFiles.length === 0) {
+            changedFilesList.innerHTML = '<p>No changes detected.</p>';
+        }
+
+        // Insert the diff section after the clicked row
+        const clickedRow = clickedButton.closest('tr');
+        const newRow = document.createElement('tr');
+        const newCell = document.createElement('td');
+        newCell.colSpan = clickedRow.cells.length;
+        newCell.appendChild(diffSection);
+        newRow.appendChild(newCell);
+        clickedRow.parentNode.insertBefore(newRow, clickedRow.nextSibling);
+    }
 });

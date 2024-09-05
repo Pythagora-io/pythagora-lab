@@ -6,6 +6,7 @@
     <title>Projects List | Pythagora Lab</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
     <link rel="stylesheet" href="/public/styles/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/diff2html/3.4.17/diff2html.min.css">
     <style>
         thead th {
             position: sticky;
@@ -135,9 +136,12 @@
                                         <div><%= p %></div>
                                     <% }); %>
                                 </td>
-                                <td><a href="javascript:void(0)" class="detail-link" data-detail-type="files" data-project-state-id="<%= state.id %>">
-                                    <%= state.files_count %>
-                                </a></td>
+                                <td>
+                                    <a href="javascript:void(0)" class="detail-link" data-detail-type="files" data-project-state-id="<%= state.id %>">
+                                        <%= state.files_count %>
+                                    </a>
+                                    <button class="btn btn-sm btn-primary show-diff-btn" data-project-state-id="<%= state.id %>" data-branch-id="<%= selectedBranchId %>">Show diff</button>
+                                </td>
                                 <td><a href="javascript:void(0)" class="detail-link" data-detail-type="userInputs" data-project-state-id="<%= state.id %>">
                                     <%= state.user_inputs_count %>
                                 </a></td>
@@ -146,6 +150,16 @@
                         <% }); %>
                     </tbody>
                 </table>
+                <!-- Diff Section -->
+                <div id="diffSection" class="mt-4" style="display: none;">
+                    <h4>Changed Files</h4>
+                    <div id="changedFilesList" class="list-group">
+                        <!-- Changed files will be dynamically added here -->
+                    </div>
+                    <div id="fileDiffContent" class="mt-3">
+                        <!-- File diff content will be displayed here -->
+                    </div>
+                </div>
             </div>
         <% } %>
     </div>
@@ -154,6 +168,8 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
     <script src="/public/js/detailsToggle.js"></script>
     <script src="/public/js/toggleVisibility.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/diff2html/3.4.17/diff2html.min.js"></script>
+    <script src="/public/js/diffVisualization.js"></script>
     <script>
         function fetchDetails(type, id) {
             console.log(`Fetching details for ${type} with ID ${id}`);

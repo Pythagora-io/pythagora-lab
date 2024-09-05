@@ -1,4 +1,5 @@
 const sqlite3 = require('sqlite3').verbose();
+const { promisify } = require('util');
 
 /**
  * Initializes a connection to the SQLite database file.
@@ -254,10 +255,199 @@ function getProjectStatesByBranchId(dbPath, branchId) {
     });
 }
 
+/**
+ * Fetches file contents for a given project state ID.
+ * @param {string} dbPath Path to the SQLite database file.
+ * @param {number} projectStateId The ID of the project state.
+ * @returns {Promise<Array>} A promise that resolves with an array of objects containing file paths and contents.
+ */
+function getFileContentsByProjectStateId(dbPath, projectStateId) {
+    return new Promise((resolve, reject) => {
+        loadDatabase(dbPath).then(db => {
+            const queryFiles = 'SELECT * FROM files WHERE project_state_id = ?';
+            db.all(queryFiles, [projectStateId], (err, files) => {
+                if (err) {
+                    console.error('Error fetching files:', err.message);
+                    reject(err);
+                } else {
+                    const fileContentsPromises = files.map(file => getFileContentById(db, file.content_id, file.path));
+                    Promise.all(fileContentsPromises)
+                        .then(contents => {
+                            resolve(contents);
+                            db.close();
+                        })
+                        .catch(error => {
+                            console.error('Error resolving file contents:', error.message);
+                            reject(error);
+                            db.close();
+                        });
+                }
+            });
+        }).catch(error => {
+            console.error('Failed to load database for fetching file contents:', error.message);
+            reject(error);
+        });
+    });
+}
+
+/**
+ * Fetches file content by content ID.
+ * @param {sqlite3.Database} db The database connection.
+ * @param {number} contentId The ID of the content.
+ * @param {string} path The file path.
+ * @returns {Promise<Object>} A promise that resolves with an object containing file path and content.
+ */
+function getFileContentById(db, contentId, path) {
+    return new Promise((resolve, reject) => {
+        db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='file_contents'", (err, row) => {
+            if (err) {
+                console.error('Error checking for file_contents table:', err.message);
+                reject(err);
+            } else if (!row) {
+                console.warn('file_contents table does not exist. Returning null content.');
+                resolve({ path, content: null });
+            } else {
+                const queryContent = 'SELECT content FROM file_contents WHERE id = ?';
+                db.get(queryContent, [contentId], (errContent, contentRow) => {
+                    if (errContent) {
+                        console.error('Error fetching file content:', errContent.message);
+                        reject(errContent);
+                    } else {
+                        resolve({ path, content: contentRow ? contentRow.content : null });
+                    }
+                });
+            }
+        });
+    });
+}
+
+/**
+ * Finds the last project state of the previous task for a given branch.
+ * @param {string} dbPath Path to the SQLite database file.
+ * @param {number} branchId The ID of the branch.
+ * @param {number} currentProjectStateId The ID of the current project state.
+ * @returns {Promise<number>} A promise that resolves with the project state ID of the last state from the previous task.
+ */
+function getPreviousTaskProjectState(dbPath, branchId, currentProjectStateId) {
+    return new Promise((resolve, reject) => {
+        loadDatabase(dbPath).then(db => {
+            const query = 'SELECT id, tasks FROM project_states WHERE branch_id = ? ORDER BY created_at DESC';
+            db.all(query, [branchId], (err, states) => {
+                if (err) {
+                    console.error('Error fetching project states:', err.message);
+                    reject(err);
+                } else {
+                    const currentIndex = states.findIndex(state => state.id === currentProjectStateId);
+                    if (currentIndex === -1 || currentIndex === 0) {
+                        reject(new Error('Current project state is the first state or not found.'));
+                    } else {
+                        for (let i = currentIndex - 1; i >= 0; i--) {
+                            if (states[i].tasks !== states[currentIndex].tasks) {
+                                resolve(states[i].id);
+                                db.close();
+                                return;
+                            }
+                        }
+                        reject(new Error('Previous task project state not found.'));
+                    }
+                }
+            });
+        }).catch(error => {
+            console.error('Failed to load database for fetching previous task project state:', error.message);
+            reject(error);
+        });
+    });
+}
+
+/**
+ * Fetches file contents for given project state IDs.
+ * @param {string} dbPath Path to the SQLite database file.
+ * @param {Array<number>} projectStateIds The IDs of the project states.
+ * @returns {Promise<Object>} A promise that resolves with an object containing project state IDs as keys and arrays of file objects (containing path and content) as values.
+ */
+function getFileContentsForProjectStates(dbPath, projectStateIds) {
+    return new Promise((resolve, reject) => {
+        loadDatabase(dbPath).then(db => {
+            let promises = projectStateIds.map(id => getFileContentsByProjectStateId(dbPath, id));
+            Promise.all(promises)
+                .then(results => {
+                    let filesByStateId = {};
+                    projectStateIds.forEach((id, index) => {
+                        filesByStateId[id] = results[index];
+                    });
+                    resolve(filesByStateId);
+                })
+                .catch(error => {
+                    console.error('Error fetching file contents for project states:', error.message);
+                    reject(error);
+                });
+        }).catch(error => {
+            console.error('Failed to load database for fetching file contents for project states:', error.message);
+            reject(error);
+        });
+    });
+}
+
+/**
+ * Fetches file contents for given project state IDs and generates a diff.
+ * @param {string} dbPath Path to the SQLite database file.
+ * @param {number} projectStateId1 The ID of the first project state.
+ * @param {number} projectStateId2 The ID of the second project state.
+ * @param {string} filePath The path of the file to diff.
+ * @returns {Promise<string>} A promise that resolves with the diff of the file contents.
+ */
+async function getFileDiff(dbPath, projectStateId1, projectStateId2, filePath) {
+    try {
+        console.log('Db Path: ', dbPath);
+
+        const db = await loadDatabase(dbPath);
+
+        // Convert db.get to return a promise
+        const getFileContent = promisify(db.get).bind(db);
+        const getContentById = promisify(db.get).bind(db); // This will be used to fetch the content using content_id
+
+        const queryFile = 'SELECT content_id FROM files WHERE project_state_id = ? AND path = ?';
+        const queryContent = 'SELECT content FROM file_contents WHERE id = ?'; // Query to fetch content using content_id
+
+        console.log('State 1: ', projectStateId1)
+        console.log('State 2: ', projectStateId2)
+        // Fetch content_ids for both project states
+        const [contentId1, contentId2] = await Promise.all([
+            getFileContent(queryFile, [projectStateId1, filePath]),
+            getFileContent(queryFile, [projectStateId2, filePath])
+        ]);
+
+        console.log(contentId1)
+        console.log(contentId2)
+        // Now, using the content_ids obtained, fetch the actual contents
+        const [content1, content2] = await Promise.all([
+            getContentById(queryContent, contentId1.content_id), // Use the content_id to fetch the actual content
+            getContentById(queryContent, contentId2.content_id)
+        ]);
+
+        const diff = diffLines(content1.content || '', content2.content || '');
+        const patch = structuredPatch(filePath, filePath, content1.content || '', content2.content || '', '', '', { context: 3 });
+
+        db.close();
+
+        return JSON.stringify(patch);
+
+    } catch (error) {
+        console.error('Error generating file diff:', error.message);
+        throw error;
+    }
+}
+
+
 module.exports = {
     loadDatabase,
     getProjects,
     getBranchesByProjectId,
     getProjectStatesByBranchId,
     searchProjectStates,
+    getFileContentsByProjectStateId,
+    getPreviousTaskProjectState,
+    getFileContentById,
+    getFileContentsForProjectStates,
+    getFileDiff,
 };

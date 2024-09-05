@@ -172,3 +172,11 @@ th:nth-child(8), td:nth-child(8),
 th:nth-child(9), td:nth-child(9),
 th:nth-child(10), td:nth-child(10) { width: auto; } /* Adjust based on content */
 th:nth-child(11), td:nth-child(11) { width: 10%; } /* New 'Action' column width */
+
+/* Styles moved from inline to CSS for diffSection */
+#diffSection {
+    display: none;
+    border: 2px solid red;
+    padding: 10px;
+    margin: 10px 0;
+}
