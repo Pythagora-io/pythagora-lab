@@ -47,11 +47,13 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Add event listener for 'Show diff' buttons
     document.querySelectorAll('.show-diff-btn').forEach(button => {
         button.addEventListener('click', function() {
-            const projectStateId = this.getAttribute('data-project-state-id');
-            const branchId = this.getAttribute('data-branch-id');
+            const currentRow = this.closest('tr');
+            const currentTaskValue = parseInt(currentRow.getAttribute('data-current-task'));
+            const currentTotalTasks = parseInt(currentRow.getAttribute('data-total-tasks'));
+            const projectStateId = currentRow.getAttribute('data-project-state-id');
+            const branchId = currentRow.getAttribute('data-branch-id');
 
             if (!projectStateId || !branchId) {
                 console.error('Missing projectStateId or branchId:', { projectStateId, branchId });
@@ -59,21 +61,35 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            fetch(`/diff`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ projectStateId, branchId })
-            })
-            .then(response => response.json())
-            .then(data => {
-                displayChangedFiles(data.changedFiles, this);
-            })
-            .catch(error => {
-                console.error('Error fetching diff:', error);
-                alert('Error fetching diff. Please try again.');
-            });
+            let comparisonRow = findComparisonRow(currentRow, currentTaskValue, currentTotalTasks);
+
+            if (comparisonRow) {
+                const previousProjectStateId = comparisonRow.getAttribute('data-project-state-id');
+                console.log('Comparison state ID: ', previousProjectStateId)
+
+                fetch(`/diff`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        projectStateId,
+                        previousProjectStateId,
+                        branchId
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    displayChangedFiles(data.changedFiles, this);
+                })
+                .catch(error => {
+                    console.error('Error fetching diff:', error);
+                    alert('Error fetching diff. Please try again.');
+                });
+            } else {
+                console.log('No suitable comparison row found');
+                alert('No suitable comparison state found for diff');
+            }
         });
     });
 

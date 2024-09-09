@@ -43,7 +43,7 @@
                         <select class="custom-select mb-3" name="branchId" id="branchSelect">
                             <option selected>Select a branch</option>
                             <% branches.forEach(branch => { %>
-                                <option value="<%= branch.id %>" <%= selectedBranchId === branch.id ? 'selected' : '' %>><%= branch.name %></order>
+                                <option value="<%= branch.id %>" <%= selectedBranchId === branch.id ? 'selected' : '' %>><%= branch.name %></option>
                             <% }); %>
                         </select>
                     </div>
@@ -101,18 +101,23 @@
                     </thead>
                     <tbody>
                         <% projectStates.forEach(state => { %>
-                            <tr>
+                            <%
+                                let tasks = JSON.parse(state.tasks);
+                                let completed_tasks = tasks.filter(t => t.status === 'done');
+                                let current_task = Math.min(completed_tasks.length + 1, tasks.length);
+                                let total_tasks = tasks.length;
+                            %>
+                            <tr data-project-state-id="<%= state.id %>"
+                                data-branch-id="<%= selectedBranchId %>"
+                                data-current-task="<%= current_task %>"
+                                data-total-tasks="<%= total_tasks %>">
                                 <td><%= state.step_index %></td>
                                 <td><a href="javascript:void(0)" class="detail-link" data-detail-type="epic" data-project-state-id="<%= state.id %>">
                                     <% let epics = JSON.parse(state.epics); %>
                                     <%= epics.length %>
                                 </a></td>
                                 <td><a href="javascript:void(0)" class="detail-link" data-detail-type="task" data-project-state-id="<%= state.id %>">
-                                    <%
-                                        let tasks = JSON.parse(state.tasks);
-                                        let completed_tasks = tasks.filter(t => t.status === 'done');
-                                    %>
-                                    <%= Math.min(completed_tasks.length + 1, tasks.length) %> / <%= tasks.length %>
+                                    <%= current_task %> / <%= total_tasks %>
                                 </a></td>
                                 <td><a href="javascript:void(0)" onclick="fetchDetails('iteration', <%= state.id %>)" class="detail-link" data-detail-type="iteration" data-project-state-id="<%= state.id %>"><%= JSON.parse(state.iterations).length %></a></td>
                                 <td><a href="javascript:void(0)" class="detail-link" data-detail-type="step" data-project-state-id="<%= state.id %>">
@@ -140,7 +145,7 @@
                                     <a href="javascript:void(0)" class="detail-link" data-detail-type="files" data-project-state-id="<%= state.id %>">
                                         <%= state.files_count %>
                                     </a>
-                                    <button class="btn btn-sm btn-primary show-diff-btn" data-project-state-id="<%= state.id %>" data-branch-id="<%= selectedBranchId %>">Show diff</button>
+                                    <button class="btn btn-sm btn-primary show-diff-btn">Show diff</button>
                                 </td>
                                 <td><a href="javascript:void(0)" class="detail-link" data-detail-type="userInputs" data-project-state-id="<%= state.id %>">
                                     <%= state.user_inputs_count %>
@@ -166,11 +171,42 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/diff2html@3.4.48/bundles/js/diff2html.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/diff2html@3.4.48/bundles/js/diff2html-ui.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/diff2html@3.4.48/bundles/css/diff2html.min.css" rel="stylesheet">
     <script src="/public/js/detailsToggle.js"></script>
     <script src="/public/js/toggleVisibility.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/diff2html/3.4.17/diff2html.min.js"></script>
     <script src="/public/js/diffVisualization.js"></script>
     <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof Diff2HtmlUI !== 'undefined') {
+                initializeDiffVisualization();
+            } else {
+                console.error('Diff2HtmlUI is not available');
+            }
+        });
+    </script>
+    <script>
+        function findComparisonRow(currentRow, currentTaskValue, currentTotalTasks) {
+            let row = currentRow.previousElementSibling;
+            console.log('findComparisonRow')
+            console.log(currentTaskValue)
+            console.log(currentTotalTasks)
+            while (row) {
+                const rowTaskValue = parseInt(row.getAttribute('data-current-task'));
+                const rowTotalTasks = parseInt(row.getAttribute('data-total-tasks'));
+
+                if (rowTaskValue === currentTaskValue - 1 || rowTotalTasks !== currentTotalTasks) {
+                    console.log('Finished comparison row: ', row)
+                    return row;
+                }
+                row = row.previousElementSibling;
+            }
+
+            console.log('Finished comparison row with null.')
+            return null;
+        }
+
         function fetchDetails(type, id) {
             console.log(`Fetching details for ${type} with ID ${id}`);
             jQuery.ajax({

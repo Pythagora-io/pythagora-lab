@@ -99,7 +99,6 @@ function searchProjectStates(dbPath, criteria) {
             let conditions = [];
 
             if (criteria.task) {
-                // Add condition to filter tasks that are not done and contain the specified criteria in their description
                 conditions.push(`EXISTS (
                     SELECT 1 FROM json_each(ps.tasks)
                     WHERE json_each.value LIKE '%status%' AND json_each.value NOT LIKE '%done%'
@@ -109,7 +108,6 @@ function searchProjectStates(dbPath, criteria) {
             }
 
             if (criteria.epic) {
-                // Add condition to filter epic that are not done and contain the specified criteria in their description
                 conditions.push(`EXISTS (
                     SELECT 1 FROM json_each(ps.epics)
                     WHERE json_each.value LIKE '%completed%' AND json_each.value NOT LIKE 'true'
@@ -119,7 +117,6 @@ function searchProjectStates(dbPath, criteria) {
             }
 
             if (criteria.iteration) {
-                // Add condition to filter iteration that are not done and contain the specified criteria in their description
                 conditions.push(`EXISTS (
                     SELECT 1 FROM json_each(ps.iterations)
                     WHERE json_each.value LIKE '%completed%' AND json_each.value NOT LIKE 'true'
@@ -129,7 +126,6 @@ function searchProjectStates(dbPath, criteria) {
             }
 
             if (criteria.llm_request) {
-                // Filter based on request that matches the specified criteria in the 'messages' field of the llm_requests table
                 conditions.push(`EXISTS (
                     SELECT 1 FROM llm_requests lr
                     WHERE lr.project_state_id = ps.id
@@ -139,7 +135,6 @@ function searchProjectStates(dbPath, criteria) {
             }
 
             if (criteria.agent) {
-                // Filter based on agent that matches the specified criteria in the 'agents' field of the llm_requests table
                 conditions.push(`EXISTS (
                     SELECT 1 FROM llm_requests lr
                     WHERE lr.project_state_id = ps.id
@@ -398,46 +393,45 @@ function getFileContentsForProjectStates(dbPath, projectStateIds) {
  */
 async function getFileDiff(dbPath, projectStateId1, projectStateId2, filePath) {
     try {
-        console.log('Db Path: ', dbPath);
+        console.log('getFileDiff called with:', { dbPath, projectStateId1, projectStateId2, filePath });
 
         const db = await loadDatabase(dbPath);
 
         // Convert db.get to return a promise
         const getFileContent = promisify(db.get).bind(db);
-        const getContentById = promisify(db.get).bind(db); // This will be used to fetch the content using content_id
+        const getContentById = promisify(db.get).bind(db);
 
         const queryFile = 'SELECT content_id FROM files WHERE project_state_id = ? AND path = ?';
-        const queryContent = 'SELECT content FROM file_contents WHERE id = ?'; // Query to fetch content using content_id
+        const queryContent = 'SELECT content FROM file_contents WHERE id = ?';
 
-        console.log('State 1: ', projectStateId1)
-        console.log('State 2: ', projectStateId2)
-        // Fetch content_ids for both project states
+        console.log('Fetching content_ids');
         const [contentId1, contentId2] = await Promise.all([
             getFileContent(queryFile, [projectStateId1, filePath]),
             getFileContent(queryFile, [projectStateId2, filePath])
         ]);
 
-        console.log(contentId1)
-        console.log(contentId2)
-        // Now, using the content_ids obtained, fetch the actual contents
-        const [content1, content2] = await Promise.all([
-            getContentById(queryContent, contentId1.content_id), // Use the content_id to fetch the actual content
-            getContentById(queryContent, contentId2.content_id)
-        ]);
+        console.log('Content IDs:', { contentId1, contentId2 });
 
-        const diff = diffLines(content1.content || '', content2.content || '');
-        const patch = structuredPatch(filePath, filePath, content1.content || '', content2.content || '', '', '', { context: 3 });
+        console.log('Fetching file contents');
+        const content1Promise = contentId1 && contentId1.content_id ? getContentById(queryContent, contentId1.content_id) : Promise.resolve({ content: '' });
+        const content2Promise = contentId2 && contentId2.content_id ? getContentById(queryContent, contentId2.content_id) : Promise.resolve({ content: '' });
+
+        const [content1, content2] = await Promise.all([content1Promise, content2Promise]);
+
+        console.log('File contents fetched');
+
+        const { createPatch } = require('diff');
+        console.log('Generating diff');
+        const diffResult = createPatch(filePath, content1.content, content2.content);
 
         db.close();
-
-        return JSON.stringify(patch);
-
+        return diffResult;
     } catch (error) {
-        console.error('Error generating file diff:', error.message);
+        console.error('Error in getFileDiff:', error);
+        console.log('Error stack:', error.stack);
         throw error;
     }
 }
-
 
 module.exports = {
     loadDatabase,

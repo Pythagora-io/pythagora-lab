@@ -3,7 +3,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const sqlite3 = require('sqlite3').verbose();
-const { getProjects, getBranchesByProjectId, getProjectStatesByBranchId, searchProjectStates, getPreviousTaskProjectState, getFileContentsByProjectStateId, getFileContentsForProjectStates } = require('../utils/projectQueries');
+const { getProjects, getBranchesByProjectId, getProjectStatesByBranchId, searchProjectStates, getFileContentsForProjectStates, getPreviousTaskProjectState, getFileDiff } = require('../utils/projectQueries');
 const { getLLMRequestDetailsByProjectStateId, getEpicDetailsByProjectStateId, getTaskDetailsByProjectStateId, getStepDetailsByProjectStateId, getFileDetailsByProjectStateId, getUserInputDetailsByProjectStateId, getIterationDetailsByProjectStateId } = require('../utils/detailQueries');
 const { addDatabaseDescription, updateDatabaseDescription, getDatabaseDescription, saveDatabaseInfo, loadDatabaseInfo } = require('../utils/databaseInfo');
 const router = express.Router();
@@ -302,15 +302,12 @@ router.post('/edit-description', (req, res) => {
   }
 });
 
-// New route '/diff' to handle diff requests
 router.post('/diff', async (req, res) => {
-  const { projectStateId, branchId } = req.body;
-  if (!projectStateId || !branchId) {
+  const { projectStateId, previousProjectStateId, branchId } = req.body;
+  if (!projectStateId || !previousProjectStateId || !branchId) {
     return res.status(400).send('Project state ID and branch ID are required.');
   }
   try {
-    const currentTaskId = parseInt(projectStateId); // Assuming projectStateId is the current task ID for this example
-    const previousProjectStateId = await getPreviousTaskProjectState(global.dbPath, branchId, projectStateId, currentTaskId);
     const fileContentsForStates = await getFileContentsForProjectStates(global.dbPath, [previousProjectStateId, projectStateId]);
 
     const currentFiles = fileContentsForStates[projectStateId];
@@ -320,7 +317,6 @@ router.post('/diff', async (req, res) => {
       const pf = previousFiles.find(pf => pf.path === cf.path);
       return !pf || pf.content !== cf.content;
     }).map(file => file.path);
-
     const response = {
         changedFiles: changedFiles,
         currentFiles: currentFiles.reduce((acc, cur) => ({ ...acc, [cur.path]: cur.content || 'Content not available' }), {}),
@@ -333,6 +329,26 @@ router.post('/diff', async (req, res) => {
     console.log('Error stack:', error.stack);
     res.status(500).send('Error processing diff request');
   }
+});
+
+// New route '/diff/file' to handle diff requests for files
+router.post('/diff/file', (req, res) => {
+    console.log('Received /diff/file request:', req.body);
+    const { projectStateId, previousProjectStateId, file } = req.body;
+    const dbPath = global.dbPath;
+
+    console.log('Fetching previous task project state');
+    console.log('Generating file diff');
+    getFileDiff(dbPath, previousProjectStateId, projectStateId, file)
+    .then(diffData => {
+        console.log('File diff generated successfully');
+        res.json({ diff: diffData });
+    })
+    .catch(error => {
+        console.error('Error generating file diff:', error);
+        console.log('Error stack:', error.stack);
+        res.status(500).json({ error: 'Failed to generate file diff' });
+    });
 });
 
 module.exports = router;
