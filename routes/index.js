@@ -8,6 +8,7 @@ const { getFileContentsForProjectStates, getFileDiff } = require('../utils/fileO
 const { searchProjectStates, getProjectStatesByBranchId } = require('../utils/projectStateQueries');
 const { getLLMRequestDetailsByProjectStateId, getEpicDetailsByProjectStateId, getTaskDetailsByProjectStateId, getStepDetailsByProjectStateId, getFileDetailsByProjectStateId, getUserInputDetailsByProjectStateId, getIterationDetailsByProjectStateId } = require('../utils/detailQueries');
 const { addDatabaseDescription, updateDatabaseDescription, getDatabaseDescription, saveDatabaseInfo, loadDatabaseInfo } = require('../utils/databaseInfo');
+const { deleteDatabase } = require('../utils/dbOperations');
 const router = express.Router();
 
 // Ensure uploads directory exists
@@ -278,28 +279,23 @@ router.get('/details/:column/:projectStateId', async (req, res) => {
 });
 
 // Route for deleting a database file
-router.post('/delete-database', (req, res) => {
+router.post('/delete-database', async (req, res) => {
   const { databaseName } = req.body;
   if (!databaseName) {
     return res.status(400).send('Database name is required for deletion.');
   }
-  const dbPath = path.join(uploadsDir, databaseName);
-  if (global.dbPath === dbPath) {
+  const databasePath = path.join(__dirname, '..', 'uploads', databaseName);
+  if (global.dbPath === databasePath) {
     console.log('Attempt to delete the currently loaded database. Operation not allowed.');
     return res.status(400).send('Deletion of the currently loaded database is not allowed.');
   }
-  fs.unlink(dbPath, (err) => {
-    if (err) {
-      console.error(`Failed to delete database file: ${databaseName}: ${err}`);
-      return res.status(500).send('Error deleting database file.');
-    }
-    console.log(`Database file deleted successfully: ${databaseName}`);
+  const result = await deleteDatabase(databasePath);
+  if (result.success) {
     const info = loadDatabaseInfo();
     delete info[databaseName];
     saveDatabaseInfo(info);
-    console.log(`Database description deleted successfully: ${databaseName}`);
-    res.redirect('/');
-  });
+  }
+  res.json(result);
 });
 
 // New route for editing database descriptions

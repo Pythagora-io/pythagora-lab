@@ -1,4 +1,5 @@
 const sqlite3 = require('sqlite3').verbose();
+const fs = require('fs').promises;
 
 /**
  * Initializes a connection to the SQLite database file.
@@ -19,6 +20,25 @@ function loadDatabase(filePath) {
     });
 }
 
-module.exports = {
-  loadDatabase,
-};
+/**
+ * Deletes the database and its related files (.db-shm, .db-wal).
+ * @param {string} databasePath Path to the SQLite database file.
+ * @returns {Promise<Object>} A promise that resolves with the result of the deletion operation.
+ */
+async function deleteDatabase(databasePath) {
+    try {
+        const basePath = databasePath.replace('.db', '');
+        await Promise.all([
+            fs.unlink(databasePath),
+            fs.unlink(`${basePath}.db-shm`).catch(() => {}),
+            fs.unlink(`${basePath}.db-wal`).catch(() => {})
+        ]);
+        console.log('Database and related files deleted successfully.');
+        return { success: true, message: 'Database and related files deleted successfully.' };
+    } catch (error) {
+        console.error('Error deleting database:', error);
+        return { success: false, message: 'Error deleting database files.' };
+    }
+}
+
+module.exports = { loadDatabase, deleteDatabase };

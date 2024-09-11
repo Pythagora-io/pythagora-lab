@@ -1,45 +1,37 @@
 // This script is responsible for handling the deletion of database files from the server.
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', () => {
     const deleteButtons = document.querySelectorAll('.delete-database-btn');
-
     deleteButtons.forEach(button => {
-        button.addEventListener('click', function(e) {
+        button.addEventListener('click', async (e) => {
             e.preventDefault();
+            const databaseName = button.dataset.databaseName;
 
-            const databaseName = this.getAttribute('data-database-name');
-            if (!databaseName) {
-                console.error('Database name is missing.');
+            // Add confirmation dialog
+            if (!confirm(`Are you sure you want to delete the database '${databaseName}'? This action cannot be undone.`)) {
                 return;
             }
 
-            const isConfirmed = confirm(`Are you sure you want to delete the database "${databaseName}"?`);
-            if (!isConfirmed) {
-                return;
-            }
+            try {
+                const response = await fetch('/delete-database', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ databaseName }),
+                });
+                const result = await response.json();
 
-            fetch('/delete-database', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ databaseName }),
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Failed to delete the database.');
+                if (result.success) {
+                    alert(result.message);
+                    location.reload();
+                } else {
+                    alert(`Error: ${result.message}`);
                 }
-                return response.json();
-            })
-            .then(data => {
-                console.log(`Database "${databaseName}" deleted successfully.`);
-                // Reload the page to update the list of databases
-                window.location.reload();
-            })
-            .catch(error => {
-                console.error('Error deleting database:', error);
-                alert('Error deleting database. Please try again.');
-            });
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while deleting the database.');
+            }
         });
     });
 });
