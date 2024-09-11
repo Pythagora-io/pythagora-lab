@@ -7,9 +7,13 @@
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
 </head>
 <body>
-  <div class="container">
+  <div class="container-fluid">
     <h1>Welcome to Pythagora Lab</h1>
     <form action="/upload" method="post" enctype="multipart/form-data">
+      <div class="form-group">
+        <label for="databaseName">Database Name:</label>
+        <input type="text" class="form-control" id="databaseName" name="databaseName" required>
+      </div>
       <div class="form-group">
         <label for="databaseFile">Upload Database File</label>
         <input type="file" class="form-control-file" id="databaseFile" name="databaseFile">
@@ -21,55 +25,66 @@
       <button type="submit" class="btn btn-primary">Upload</button>
     </form>
     <hr>
-    <h2>Previously Uploaded Databases</h2>
-    <table class="table">
-      <thead>
-        <tr>
-          <th>Database Name</th>
-          <th>Description</th>
-          <th>Rename</th>
-          <th>Edit Description</th>
-          <th>Select</th>
-          <th>Delete</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% databases.forEach(function(database) { %>
-          <tr>
-            <td><%= database.name %></td>
-            <td><%= database.description %></td>
-            <td>
-              <form action="/rename-database" method="post" onsubmit="return confirm('Are you sure you want to rename this database?');" class="form-inline">
-                <input type="hidden" name="oldName" value="<%= database.name %>">
-                <input type="text" name="newName" placeholder="New name" required class="form-control mr-2">
-                <button type="submit" class="btn btn-info">Rename</button>
-              </form>
-            </td>
-            <td>
-              <form action="/edit-description" method="post" class="form-inline">
-                <input type="hidden" name="databaseName" value="<%= database.name %>">
-                <input type="text" name="newDescription" value="<%= database.description %>" required class="form-control mr-2">
-                <button type="submit" class="btn btn-info">Edit</button>
-              </form>
-            </td>
-            <td>
-              <form action="/select-database" method="post">
-                <button type="submit" class="btn btn-secondary" name="selectedDatabase" value="<%= database.name %>">Select</button>
-              </form>
-            </td>
-            <td>
-              <form action="/delete-database" method="post" onsubmit="return confirm('Are you sure you want to delete this database?');">
-                <input type="hidden" name="databaseName" value="<%= database.name %>">
-                <button type="submit" class="btn btn-danger">Delete</button>
-              </form>
-            </td>
-          </tr>
-        <% }); %>
-      </tbody>
-    </table>
+    <div class="row">
+      <div class="col-12">
+        <h2>Previously Uploaded Databases</h2>
+        <div class="table-responsive">
+          <table class="table table-striped table-bordered">
+            <thead>
+              <tr>
+                <th>Database Name</th>
+                <th>Description</th>
+                <th>Rename</th>
+                <th>Edit Description</th>
+                <th>Select</th>
+                <th>Delete</th>
+                <th>Download</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% databases.forEach(function(database) { %>
+                <tr>
+                  <td><%= database.name %></td>
+                  <td><%= database.description %></td>
+                  <td>
+                    <form action="/rename-database" method="post" onsubmit="return confirm('Are you sure you want to rename this database?');" class="form-inline">
+                      <input type="hidden" name="oldName" value="<%= database.name %>">
+                      <input type="text" name="newName" placeholder="New name" required class="form-control mr-2">
+                      <button type="submit" class="btn btn-info">Rename</button>
+                    </form>
+                  </td>
+                  <td>
+                    <form action="/edit-description" method="post" class="form-inline">
+                      <input type="hidden" name="databaseName" value="<%= database.name %>">
+                      <input type="text" name="newDescription" value="<%= database.description %>" required class="form-control mr-2">
+                      <button type="submit" class="btn btn-info">Edit</button>
+                    </form>
+                  </td>
+                  <td>
+                    <form action="/select-database" method="post">
+                      <button type="submit" class="btn btn-secondary" name="selectedDatabase" value="<%= database.name %>">Select</button>
+                    </form>
+                  </td>
+                  <td>
+                    <form action="/delete-database" method="post" onsubmit="return confirm('Are you sure you want to delete this database?');">
+                      <input type="hidden" name="databaseName" value="<%= database.name %>">
+                      <button type="submit" class="btn btn-danger">Delete</button>
+                    </form>
+                  </td>
+                  <td>
+                    <button class="btn btn-success download-database" data-database-name="<%= database.name %>">Download</button>
+                  </td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   </div>
   <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
   <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+  <script src="/public/js/downloadDatabase.js"></script>
 </body>
 </html>

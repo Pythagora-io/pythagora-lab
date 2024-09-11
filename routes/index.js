@@ -23,9 +23,14 @@ const storage = multer.diskStorage({
     cb(null, uploadsDir)
   },
   filename: function(req, file, cb) {
-    // Allow files without an extension
-    const filename = file.fieldname + '-' + Date.now() + (path.extname(file.originalname) ? path.extname(file.originalname) : '');
-    cb(null, filename);
+    const databaseName = req.body.databaseName.trim();
+    if (!/^[a-zA-Z0-9_]+$/.test(databaseName)) {
+      const err = new Error('Invalid database name. Use only letters, numbers, and underscores.');
+      cb(err);
+      return;
+    }
+    const fileName = databaseName.endsWith('.db') ? databaseName : `${databaseName}.db`;
+    cb(null, fileName);
   }
 });
 
@@ -118,23 +123,28 @@ router.post('/upload', (req, res) => {
       return res.status(400).send('Error: No database file selected');
     } else {
       const databaseFile = req.files.databaseFile[0];
-      console.log(`File uploaded successfully: ${databaseFile.filename}`);
-      const dbPath = path.join(uploadsDir, databaseFile.filename);
+      const databaseName = databaseFile.filename;
+      const dbPath = path.join(uploadsDir, databaseName);
+      const info = loadDatabaseInfo();
+      if (info[databaseName]) {
+        return res.status(400).send('A database with this name already exists.');
+      }
+      console.log(`File uploaded successfully: ${databaseName}`);
       const db = new sqlite3.Database(dbPath, sqlite3.OPEN_READONLY, (dbErr) => {
         if (dbErr) {
           console.error(`Error opening database file: ${dbErr.message}`);
           fs.unlink(dbPath, (unlinkErr) => {
             if (unlinkErr) console.error(`Error removing invalid database file: ${unlinkErr.message}`);
-            else console.log(`Invalid database file removed: ${databaseFile.filename}`);
+            else console.log(`Invalid database file removed: ${databaseName}`);
           });
           return res.status(400).send('Error: Uploaded file is not a valid SQLite database');
         } else {
-          console.log(`Database file verified successfully: ${databaseFile.filename}`);
+          console.log(`Database file verified successfully: ${databaseName}`);
           db.close();
           const description = req.body.description;
           console.log(`Description: ${description}`);
-          console.log(`Adding description for database: ${databaseFile.filename}`);
-          addDatabaseDescription(databaseFile.filename, description);
+          console.log(`Adding description for database: ${databaseName}`);
+          addDatabaseDescription(databaseName, description);
           global.dbPath = dbPath;
           res.redirect('/projects');
         }
@@ -351,6 +361,24 @@ router.post('/diff/file', (req, res) => {
         console.log('Error stack:', error.stack);
         res.status(500).json({ error: 'Failed to generate file diff' });
     });
+});
+
+// Download database route
+router.get('/download/:databaseName', (req, res) => {
+  const { databaseName } = req.params;
+  const dbPath = path.join(uploadsDir, databaseName);
+
+  if (fs.existsSync(dbPath)) {
+    res.download(dbPath, databaseName, (err) => {
+      if (err) {
+        console.error(`Error downloading database ${databaseName}:`, err);
+        res.status(500).send('Error downloading database');
+      }
+    });
+  } else {
+    console.error(`Database file not found: ${dbPath}`);
+    res.status(404).send('Database file not found');
+  }
 });
 
 module.exports = router;

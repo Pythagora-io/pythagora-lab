@@ -33,7 +33,7 @@ function addDatabaseDescription(name, description) {
   console.log(`Adding description for database: ${name}`);
   try {
     const info = loadDatabaseInfo();
-    info[name] = { description }; // Ensure the description is stored correctly
+    info[name] = { description, name }; // Modified to use the provided name and include it in the info
     saveDatabaseInfo(info);
     console.log(`Description added for database: ${name}`);
   } catch (error) {

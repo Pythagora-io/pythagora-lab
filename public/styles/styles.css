@@ -38,6 +38,7 @@ body {
 table {
     width: 100%;
     border-collapse: collapse;
+    table-layout: auto;
 }
 
 table, th, td {
@@ -45,12 +46,14 @@ table, th, td {
 }
 
 th, td {
-    text-align: left;
-    padding: 8px;
+    padding: 0.75rem;
+    vertical-align: top;
+    border-top: 1px solid #dee2e6;
+    text-align: left; /* Restored text alignment for table headers and cells */
 }
 
 th {
-    background-color: #f2f2f2;
+    background-color: #f2f2f2; /* Restored background color for table headers */
 }
 
 /* Sticky table header */
@@ -179,4 +182,26 @@ th:nth-child(11), td:nth-child(11) { width: 10%; } /* New 'Action' column width 
     border: 2px solid red;
     padding: 10px;
     margin: 10px 0;
+}
+
+/* New class for full-width table container */
+.table-full-width {
+    width: 100%;
+    max-width: none;
+    margin-bottom: 1rem;
+}
+
+/* Media queries for responsiveness */
+@media (max-width: 767.98px) {
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+@media (min-width: 768px) {
+    .container-fluid {
+        padding-right: 15px;
+        padding-left: 15px;
+    }
 }
