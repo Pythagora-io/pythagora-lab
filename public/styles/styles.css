@@ -49,11 +49,11 @@ th, td {
     padding: 0.75rem;
     vertical-align: top;
     border-top: 1px solid #dee2e6;
-    text-align: left; /* Restored text alignment for table headers and cells */
+    text-align: left;
 }
 
 th {
-    background-color: #f2f2f2; /* Restored background color for table headers */
+    background-color: #f2f2f2;
 }
 
 /* Sticky table header */
@@ -83,7 +83,7 @@ tr:nth-child(even) {
 
 /* Button styling */
 .button {
-    background-color: #4CAF50; /* Green */
+    background-color: #4CAF50;
     border: none;
     color: white;
     padding: 15px 32px;
@@ -141,40 +141,15 @@ tr:nth-child(even) {
 
 /* Additional styles for expandable JSON sections */
 .collapsible-json:hover, .collapsible-json:focus {
-    background-color: #ddd; /* Indicates interactivity on hover/focus */
+    background-color: #ddd;
 }
 
 .collapsible-json-content {
     border: 1px solid #ccc;
     background-color: #f9f9f9;
     overflow-y: auto;
-    max-height: 300px; /* Ensures very long JSON data is manageable */
+    max-height: 300px;
 }
-
-/* Adjustments for new 'Action' column in project states table */
-th, td {
-    padding: 8px;
-    text-align: left;
-    white-space: nowrap; /* Ensure text in each cell does not wrap */
-}
-
-/* Ensuring table layout accommodates the new 'Action' column */
-table {
-    table-layout: fixed;
-}
-
-/* Specific width adjustments for table columns to accommodate 'Action' column */
-th:nth-child(1), td:nth-child(1) { width: 5%; }
-th:nth-child(2), td:nth-child(2),
-th:nth-child(3), td:nth-child(3),
-th:nth-child(4), td:nth-child(4),
-th:nth-child(5), td:nth-child(5),
-th:nth-child(6), td:nth-child(6),
-th:nth-child(7), td:nth-child(7),
-th:nth-child(8), td:nth-child(8),
-th:nth-child(9), td:nth-child(9),
-th:nth-child(10), td:nth-child(10) { width: auto; } /* Adjust based on content */
-th:nth-child(11), td:nth-child(11) { width: 10%; } /* New 'Action' column width */
 
 /* Styles moved from inline to CSS for diffSection */
 #diffSection {
@@ -204,4 +179,25 @@ th:nth-child(11), td:nth-child(11) { width: 10%; } /* New 'Action' column width 
         padding-right: 15px;
         padding-left: 15px;
     }
+}
+
+/* Styles for the new four-column layout */
+.diff-container {
+    display: flex;
+    width: 100%;
+    overflow-x: auto;
+    position: relative;
+}
+
+.diff-column {
+    flex: 1;
+    padding: 5px;
+    border-right: 1px solid #ccc;
+}
+
+.line-number {
+    user-select: none;
+    color: #999;
+    padding-right: 10px;
+    text-align: right;
 }

@@ -33,7 +33,7 @@ function displayFileDiff(file, diffContent) {
                 matching: 'lines',
                 outputFormat: 'side-by-side',
             });
-            fileDiffContent.innerHTML += diffHtml;
+            fileDiffContent.innerHTML += `<div class="diff-container">${diffHtml}</div>`;
 
         } catch (diffError) {
             console.error('Error generating diff HTML:', diffError);
