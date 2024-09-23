@@ -48,7 +48,7 @@ const upload = multer({
       cb(new Error('Error: File upload only supports the following filetypes - .db, .sqlite, .sqlite3 or files without an extension'));
     }
   },
-  limits: { fileSize: 1000000000 }
+  limits: { fileSize: 2000000000 }
 }).fields([{ name: 'databaseFile', maxCount: 1 }, { name: 'description', maxCount: 1 }]); // Updated to accept description
 
 
