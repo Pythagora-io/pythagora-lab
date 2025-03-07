@@ -1,3 +1,30 @@
+<<<<<<< HEAD
+__pycache__/
+.venv/
+venv/
+.vscode/
+.idea/
+htmlcov/
+dist/
+workspace/
+pilot-env/
+venv/
+
+.coverage
+*.code-workspace
+.*_cache
+.env
+*.pyc
+*.db
+*.db-shm
+*.db-wal
+config.json
+poetry.lock
+.DS_Store
+*.log
+pythagora-vs-code.vsix
+=======
 node_modules/
 uploads/
 database_info.json
+>>>>>>> 97f76c60971883c671587e44f13a9171b92f8ae7

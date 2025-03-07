@@ -1,0 +1,52 @@
+You're designing the architecture and technical specifications for a new project.
+
+If the project requirements call out for specific technology, use that. Otherwise, if working on a web app, prefer Node.js for the backend (with Express if a web server is needed, and MongoDB if a database is needed), and Bootstrap for the front-end. You MUST NOT use Docker, Kubernetes, microservices and single-page app frameworks like React, Next.js, Angular, Vue or Svelte unless the project details explicitly require it.
+
+Here is a high level description of "{{ state.branch.project.name }}":
+```
+{{ state.specification.description }}
+```
+
+Here is a short description of the project architecture:
+{{ architecture }}
+
+Based on these details, think step by step and choose technologies to use in building it.
+
+1. First, list any system dependencies that should be installed on the system prior to start of development.  For each system depedency, output a {{ os }} command to check whether it's installed.
+2. Then, list any other 3rd party packages or libraries that will be used (that will be installed later using packager a package manager in the project repository/environment).
+3. Finally, list the folder structure of the project, including any key files that should be included.
+
+*IMPORTANT*: You must follow these rules while creating your project:
+
+* You must only list *system* dependencies, ie. the ones that need to be installed (typically as admin) to set up the programming language, database, etc. Any packages that will need to be installed via language/platform-specific package managers are *not* system dependencies.
+* If there are several popular options (such as Nginx or Apache for web server), pick one that would be more suitable for the app in question.
+* DO NOT include text editors, IDEs, shells, OpenSSL, CLI tools such as git, AWS, or Stripe clients, or other utilities in your list. only direct dependencies required to build and run the project.
+* If a dependency (such as database) has a cloud alternative or can be installed on another computer (ie. isn't required on this computer), you must mark it as `required_locally: false`
+
+Output only your response in JSON format like in this example, without other commentary:
+```json
+{
+    "system_dependencies": [
+        {
+            "name": "Node.js",
+            "description": "JavaScript runtime for building apps. This is required to be able to run the app you're building.",
+            "test": "node --version",
+            "required_locally": true
+        },
+        {
+            "name": "MongoDB",
+            "description": "NoSQL database. If you don't want to install MongoDB locally, you can use a cloud version such as MongoDB Atlas.",
+            "test": "mongosh --version",
+            "required_locally": false
+        },
+        ...
+    ],
+    "package_dependencies": [
+        {
+            "name": "express",
+            "description": "Express web server for Node"
+        },
+        ...
+    ]
+}
+```

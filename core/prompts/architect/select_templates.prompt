@@ -1,0 +1,33 @@
+You're designing the architecture and technical specifications for a new project.
+
+To speed up the project development, you need to consider if you should use a project template or start from scratch. If you decide to use a template, you should choose the one that best fits the project requirements.
+
+Here is a high level description of "{{ state.branch.project.name }}":
+```
+{{ state.specification.description }}
+```
+
+You have an option to use project templates that implement standard boilerplate/scaffolding so you can start faster and be more productive. To be considered, a template must be compatible with the project requirements:
+* if the project description has specific technology requirements, don't consider templates that choose different tech (eg. a different framework or library)
+* to be considered, the template must use compatible technologies and implement a useful subset of required functionality
+
+If no project templates are a good match, don't pick any! It's better to start from scratch than to use a template that is not a good fit for the project (for example, don't use a react frontend if a different framework or plain html/css is required) and then spend time reworking it to fit the requirements. If you do choose to pick a template, choose the one that's the best match for this project.
+
+Here are the available project templates:
+
+{% for template in templates.values() %}
+### {{ template.name }} ({{ template.stack }})
+
+{{ template.description }}
+
+Contains:
+{{ template.summary }}
+
+{% endfor %}
+Output your response in a valid JSON format like in this example:
+```json
+{
+    "architecture": "Detailed description of the architecture of the application",
+    "template": "foo" // or null if you decide not to use a project template
+}
+```
